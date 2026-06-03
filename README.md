@@ -16,7 +16,7 @@ An AI tutor that runs on your laptop. Students connect via browser and ask quest
 
 ## Who Built This?
 
-Dr. John M. Wandeto — Senior Lecturer at DeKUT, Kenya-certified educator (B.Ed), PhD in Computer Science (University of Strasbourg), and AI Solutions Engineer.
+Dr. John M. Wandeto — Senior Lecturer at Dedan Kimathi University of Technology (DeKUT), Kenya-certified educator (B.Ed), PhD in Computer Science (University of Strasbourg, France), and AI Solutions Engineer.
 
 [![CV](https://img.shields.io/badge/Download-CV-red)](./Wandeto_cv.pdf)
 
