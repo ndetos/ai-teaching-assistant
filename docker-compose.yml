@@ -1,0 +1,28 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-server
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+
+  ai-tutor:
+    image: ndetos/ai-tutor-sim:latest
+    container_name: ai-tutor
+    ports:
+      - "5004:5004"
+    environment:
+      - OLLAMA_HOST=ollama
+    volumes:
+      # Mount custom course materials (optional)
+      - ./course_materials:/course:ro
+      # Mount custom knowledge base (optional)
+      - ./knowledge_base:/knowledge:ro
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
