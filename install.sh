@@ -131,5 +131,5 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     cd ~/ai-tutor
     docker-compose up
 else
-    echo "To start later, run: cd ~/ai-tutor && docker-compose up"
+    echo "To start later, run: cd ~/ai-tutor && docker compose up"
 fi
