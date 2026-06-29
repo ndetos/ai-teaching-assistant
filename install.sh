@@ -10,16 +10,13 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
-
 echo "=========================================="
 echo "🚀 AI Teaching Assistant Installer"
 echo "=========================================="
 echo ""
-
 # ============================================================
 # STEP 1: Detect OS
 # ============================================================
-
 OS="$(uname -s)"
 case "${OS}" in
     Linux*)     OS_TYPE="Linux";;
@@ -29,13 +26,10 @@ case "${OS}" in
 esac
 echo "📋 Detected OS: $OS_TYPE"
 echo ""
-
 # ============================================================
 # STEP 2: Check Docker
 # ============================================================
-
 echo "📦 Checking Docker..."
-
 if command -v docker &> /dev/null; then
     echo "   ✅ Docker already installed: $(docker --version)"
 else
@@ -70,15 +64,11 @@ else
             ;;
     esac
 fi
-
 echo ""
-
 # ============================================================
 # STEP 3: Check Docker Compose
 # ============================================================
-
 echo "📦 Checking Docker Compose..."
-
 if docker compose version &> /dev/null; then
     echo "   ✅ Docker Compose available"
 elif command -v docker-compose &> /dev/null; then
@@ -88,28 +78,20 @@ else
     echo "   It is included with Docker Desktop."
     exit 1
 fi
-
 echo ""
-
 # ============================================================
 # STEP 4: Download docker-compose.yml
 # ============================================================
-
 echo "📥 Downloading AI Tutor configuration..."
-
 mkdir -p ~/ai-tutor
 cd ~/ai-tutor
-
 # Download the docker-compose.yml from GitHub
 curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/docker-compose.yml -o docker-compose.yml
-
 echo "   ✅ Configuration downloaded to ~/ai-tutor"
 echo ""
-
 # ============================================================
 # STEP 5: Optional Desktop Shortcut (Linux)
 # ============================================================
-
 if [[ "$OS_TYPE" == "Linux" ]]; then
     echo "🖥️ Creating desktop shortcut..."
     cat > ~/Desktop/ai-tutor.desktop << EOF
@@ -124,13 +106,10 @@ Categories=Education;
 EOF
     chmod +x ~/Desktop/ai-tutor.desktop 2>/dev/null || echo "   ⚠️ Could not create desktop shortcut"
 fi
-
 echo ""
-
 # ============================================================
 # STEP 6: Run the AI Tutor
 # ============================================================
-
 echo "=========================================="
 echo "✅ Installation Complete!"
 echo "=========================================="
