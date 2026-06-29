@@ -101,7 +101,7 @@ mkdir -p ~/ai-tutor
 cd ~/ai-tutor
 
 # Download the docker-compose.yml from GitHub
-curl -fsSL https://raw.githubusercontent.com/ndetos/ai-tutor-installer/main/docker-compose.yml -o docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/docker-compose.yml -o docker-compose.yml
 
 echo "   ✅ Configuration downloaded to ~/ai-tutor"
 echo ""
