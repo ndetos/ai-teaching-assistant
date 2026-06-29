@@ -229,6 +229,38 @@
         </div>
     </section>
     
+    <!-- One-Command Installer -->
+<section id="installer" style="background: #f0f4ff; padding: 60px 0;">
+    <div class="container">
+        <h2 class="section-title">🚀 Get Started in One Command</h2>
+        <p class="section-subtitle">Copy and paste this command into your terminal. Everything else is automatic.</p>
+        
+        <div style="background: #1a1a2e; border-radius: 16px; padding: 30px; max-width: 800px; margin: 30px auto; text-align: center;">
+            <code style="color: #00ff88; font-size: 1.1rem; word-break: break-all; background: transparent; display: block; padding: 15px;">
+                curl -fsSL https://raw.githubusercontent.com/ndetos/ai-tutor-installer/main/install.sh | bash
+            </code>
+            <button onclick="copyCommand()" style="margin-top: 15px; background: #e94560; color: white; padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer;">
+                📋 Copy Command
+            </button>
+            <div id="copyFeedback" style="display: none; margin-top: 10px; color: #00ff88; font-size: 0.9rem;">
+                ✅ Copied! Paste it in your terminal.
+            </div>
+        </div>
+        
+        <div style="max-width: 700px; margin: 0 auto; font-size: 0.9rem; color: #555; text-align: left;">
+            <p><strong>⚠️ Requirements:</strong></p>
+            <ul style="list-style: none; padding: 0;">
+                <li style="margin-bottom: 8px; padding-left: 25px; position: relative;">💻 <strong>8GB RAM</strong> (16GB recommended)</li>
+                <li style="margin-bottom: 8px; padding-left: 25px; position: relative;">📦 <strong>15GB free disk space</strong> (for the AI model)</li>
+                <li style="margin-bottom: 8px; padding-left: 25px; position: relative;">🐳 <strong>Docker Desktop</strong> (installed automatically on Linux; manual on Windows/macOS)</li>
+            </ul>
+            <p style="margin-top: 15px; font-size: 0.8rem; color: #888;">
+                📜 Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.en.html" target="_blank">AGPL-3.0</a>
+            </p>
+        </div>
+    </div>
+</section>
+    
     <!-- Pricing -->
     <section id="pricing" class="pricing">
         <div class="container">
@@ -239,7 +271,7 @@
                     <h3>DIY</h3>
                     <div class="price">Free</div>
                     <ul><li>Open source scripts</li><li>GitHub docs</li></ul>
-                    <button onclick="window.open('https://github.com/ndetos/ai-teaching-assistant', '_blank')" style="background:#ccc; color:#333; padding:12px 24px; border-radius:50px; border:none; cursor:pointer;">Get Scripts</button>
+                    <button onclick="document.getElementById('installer').scrollIntoView({behavior: 'smooth'})" style="background:#1a73e8; color:white; padding:12px 24px; border-radius:50px; border:none; cursor:pointer;">🚀 Get Started</button>
                 </div>
                 <div class="pricing-card featured">
                     <h3>Done For You</h3>
@@ -248,7 +280,7 @@
                     <button onclick="document.getElementById('contact').scrollIntoView({behavior: 'smooth'})" style="background:#e94560; color:white; padding:12px 24px; border-radius:50px; border:none; cursor:pointer;">Book Now →</button>
                 </div>
             </div>
-            <p style="text-align:center; margin-top:20px; font-size:0.8rem;">Regular: KSh 15,000 — first 20 at KSh 5,000</p>
+            <p style="text-align:center; margin-top:20px; font-size:0.8rem;">Regular: KSh 5,000 — first 20 at KSh 1,000</p>
         </div>
     </section>
     
@@ -438,6 +470,15 @@
         document.getElementById('chatInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') sendMessage();
         });
+        
+        function copyCommand() {
+    const cmd = 'curl -fsSL https://raw.githubusercontent.com/ndetos/ai-tutor-installer/main/install.sh | bash';
+    navigator.clipboard.writeText(cmd);
+    const feedback = document.getElementById('copyFeedback');
+    feedback.style.display = 'block';
+    setTimeout(() => { feedback.style.display = 'none'; }, 3000);
+}
+        
     </script>
 </body>
 </html>
