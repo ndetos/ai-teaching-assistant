@@ -2,7 +2,7 @@
 # AI Teaching Assistant - One-Command Installer
 # ============================================================
 # This script installs Docker (if needed), pulls the AI model,
-# and runs the AI Tutor.
+# and runs the AI Tutor in the background.
 # ============================================================
 set -e
 RED='\033[0;31m'
@@ -98,11 +98,11 @@ HOST_IP=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^127\
 if [ -z "$HOST_IP" ]; then
     HOST_IP=$(hostname -I | awk '{print $1}')
 fi
+export STUDENT_URL="http://$HOST_IP:5004"
 echo "   📡 Host IP: $HOST_IP"
 # --- END: Get Host IP ---
 
 echo "🐳 Starting AI Tutor containers..."
-export STUDENT_URL="http://$HOST_IP:5004"
 docker compose up -d
 
 echo "   ⏳ Waiting for AI Tutor to start..."
@@ -156,30 +156,22 @@ EOF
 fi
 echo ""
 # ============================================================
-# STEP 8: Run the AI Tutor
+# STEP 8: Installation Complete
 # ============================================================
 echo "=========================================="
 echo "✅ Installation Complete!"
 echo "=========================================="
 echo ""
-echo "Your AI Tutor is ready to run."
+echo "Your AI Tutor is now running in the background."
 echo ""
-echo "To start it now, run:"
-echo "   cd ~/ai-tutor && docker compose up"
+echo "📚 Students connect to: $STUDENT_URL"
 echo ""
-echo "Once running, open your browser to:"
-echo "   http://localhost:5004"
+echo "🔧 To view logs:"
+echo "   cd ~/ai-tutor && docker compose logs -f"
+echo ""
+echo "🛑 To stop the AI Tutor:"
+echo "   cd ~/ai-tutor && docker compose down"
 echo ""
 echo "📧 Support: john.wandeto@dkut.ac.ke"
 echo "📱 WhatsApp: +254 783 808 800"
-echo ""
 echo "=========================================="
-read -p "Do you want to start the AI Tutor now? (y/n) " -n 1 -r
-echo ""
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "🚀 Starting AI Tutor..."
-    cd ~/ai-tutor
-    docker compose up -d
-else
-    echo "To start later, run: cd ~/ai-tutor && docker compose up"
-fi
