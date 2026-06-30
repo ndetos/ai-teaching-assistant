@@ -89,25 +89,45 @@ curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master
 echo "   ✅ Configuration downloaded to ~/ai-tutor"
 echo ""
 # ============================================================
-# STEP 5: Pull the AI Model (if not already present)
+# STEP 5: Start containers (in background) and display startup logs
 # ============================================================
-echo "🧠 Ensuring AI model is downloaded..."
-
-# Start the containers in the background
+echo "🐳 Starting AI Tutor containers..."
 docker compose up -d
 
-# Wait for Ollama to be ready
-echo "   Waiting for Ollama to start..."
-sleep 10
+echo "   ⏳ Waiting for AI Tutor to start..."
+sleep 5
 
-# Pull the model
-echo "   Downloading qwen2.5:1.5b (this may take 2-5 minutes)..."
-docker exec ollama-server ollama pull qwen2.5:1.5b
+# Display the startup logs so the user sees the URL
+echo ""
+echo "📋 AI Tutor Startup Logs:"
+docker compose logs --tail=20 ai-tutor
+echo ""
 
-echo "   ✅ Model ready!"
+# Extract the "Students connect to" URL from the logs
+STUDENT_URL=$(docker compose logs ai-tutor | grep "STUDENTS CONNECT TO" | tail -1 | sed -E 's/.*(http:[^ ]*).*/\1/')
+if [ -n "$STUDENT_URL" ]; then
+    echo "   ✅ Students can connect at: $STUDENT_URL"
+else
+    echo "   ⚠️ Could not detect student connection URL. Check your network settings."
+fi
 echo ""
 # ============================================================
-# STEP 6: Optional Desktop Shortcut (Linux)
+# STEP 6: Pull the AI Model
+# ============================================================
+echo "🧠 Downloading AI model (qwen2.5:1.5b)..."
+echo "   This may take 2-5 minutes depending on your internet speed."
+
+# Check if the model is already downloaded
+MODEL_EXISTS=$(docker exec ollama-server ollama list | grep "qwen2.5:1.5b" || true)
+if [ -n "$MODEL_EXISTS" ]; then
+    echo "   ✅ Model already downloaded"
+else
+    docker exec ollama-server ollama pull qwen2.5:1.5b
+    echo "   ✅ Model downloaded"
+fi
+echo ""
+# ============================================================
+# STEP 7: Optional Desktop Shortcut (Linux)
 # ============================================================
 if [[ "$OS_TYPE" == "Linux" ]]; then
     echo "🖥️ Creating desktop shortcut..."
@@ -125,7 +145,7 @@ EOF
 fi
 echo ""
 # ============================================================
-# STEP 7: Run the AI Tutor
+# STEP 8: Run the AI Tutor
 # ============================================================
 echo "=========================================="
 echo "✅ Installation Complete!"
