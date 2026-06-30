@@ -15,6 +15,7 @@ services:
       - "5004:5004"
     environment:
       - OLLAMA_HOST=ollama
+      - STUDENT_URL=${STUDENT_URL}
     volumes:
       # Mount custom course materials (optional)
       - ./course_materials:/course:ro
