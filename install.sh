@@ -1,7 +1,8 @@
 #!/bin/bash
 # AI Teaching Assistant - One-Command Installer
 # ============================================================
-# This script installs Docker (if needed) and runs the AI Tutor.
+# This script installs Docker (if needed), pulls the AI model,
+# and runs the AI Tutor.
 # ============================================================
 set -e
 RED='\033[0;31m'
@@ -69,7 +70,7 @@ echo ""
 echo "📦 Checking Docker Compose..."
 if docker compose version &> /dev/null; then
     echo "   ✅ Docker Compose available"
-elif command -v docker-compose &> /dev/null; then
+elif command -v docker compose &> /dev/null; then
     echo "   ✅ Docker Compose available (old version)"
 else
     echo "   ❌ Docker Compose not found."
@@ -88,7 +89,25 @@ curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master
 echo "   ✅ Configuration downloaded to ~/ai-tutor"
 echo ""
 # ============================================================
-# STEP 5: Optional Desktop Shortcut (Linux)
+# STEP 5: Pull the AI Model (if not already present)
+# ============================================================
+echo "🧠 Ensuring AI model is downloaded..."
+
+# Start the containers in the background
+docker compose up -d
+
+# Wait for Ollama to be ready
+echo "   Waiting for Ollama to start..."
+sleep 10
+
+# Pull the model
+echo "   Downloading qwen2.5:1.5b (this may take 2-5 minutes)..."
+docker exec ollama-server ollama pull qwen2.5:1.5b
+
+echo "   ✅ Model ready!"
+echo ""
+# ============================================================
+# STEP 6: Optional Desktop Shortcut (Linux)
 # ============================================================
 if [[ "$OS_TYPE" == "Linux" ]]; then
     echo "🖥️ Creating desktop shortcut..."
@@ -96,7 +115,7 @@ if [[ "$OS_TYPE" == "Linux" ]]; then
 [Desktop Entry]
 Name=AI Tutor
 Comment=Start the AI Teaching Assistant
-Exec=gnome-terminal -- bash -c "cd ~/ai-tutor && docker-compose up"
+Exec=gnome-terminal -- bash -c "cd ~/ai-tutor && docker compose up"
 Icon=utilities-terminal
 Terminal=false
 Type=Application
@@ -106,7 +125,7 @@ EOF
 fi
 echo ""
 # ============================================================
-# STEP 6: Run the AI Tutor
+# STEP 7: Run the AI Tutor
 # ============================================================
 echo "=========================================="
 echo "✅ Installation Complete!"
@@ -115,7 +134,7 @@ echo ""
 echo "Your AI Tutor is ready to run."
 echo ""
 echo "To start it now, run:"
-echo "   cd ~/ai-tutor && docker-compose up"
+echo "   cd ~/ai-tutor && docker compose up"
 echo ""
 echo "Once running, open your browser to:"
 echo "   http://localhost:5004"
