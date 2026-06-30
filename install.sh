@@ -70,7 +70,7 @@ echo ""
 echo "📦 Checking Docker Compose..."
 if docker compose version &> /dev/null; then
     echo "   ✅ Docker Compose available"
-elif command -v docker compose &> /dev/null; then
+elif command -v docker-compose &> /dev/null; then
     echo "   ✅ Docker Compose available (old version)"
 else
     echo "   ❌ Docker Compose not found."
@@ -91,7 +91,18 @@ echo ""
 # ============================================================
 # STEP 5: Start containers (in background) and display startup logs
 # ============================================================
+
+# --- BEGIN: Get Host IP ---
+# Get the host IP address for students to connect
+HOST_IP=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^127\.' | grep -v '^172\.' | head -1)
+if [ -z "$HOST_IP" ]; then
+    HOST_IP=$(hostname -I | awk '{print $1}')
+fi
+echo "   📡 Host IP: $HOST_IP"
+# --- END: Get Host IP ---
+
 echo "🐳 Starting AI Tutor containers..."
+export STUDENT_URL="http://$HOST_IP:5004"
 docker compose up -d
 
 echo "   ⏳ Waiting for AI Tutor to start..."
