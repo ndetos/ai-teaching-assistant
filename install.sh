@@ -5,17 +5,51 @@
 # and runs the AI Tutor in the background.
 # ============================================================
 set -e
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m'
-echo "=========================================="
+
+# ============================================================
+# Helper Functions
+# ============================================================
+spinner() {
+    local pid=$1
+    local delay=0.1
+    local spinstr='|/-\'
+    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+    printf "    \b\b\b\b"
+}
+
+print_status() {
+    echo -e "${BLUE}==>${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}✅${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}❌${NC} $1"
+}
+
+# ============================================================
+# Main Script
+# ============================================================
+
+echo ""
 echo "🚀 AI Teaching Assistant Installer"
 echo "=========================================="
-echo ""
-# ============================================================
-# STEP 1: Detect OS
-# ============================================================
+
+# Detect OS
 OS="$(uname -s)"
 case "${OS}" in
     Linux*)     OS_TYPE="Linux";;
@@ -23,153 +57,137 @@ case "${OS}" in
     CYGWIN*|MINGW*|MSYS*) OS_TYPE="Windows";;
     *)          OS_TYPE="UNKNOWN";;
 esac
-echo "📋 Detected OS: $OS_TYPE"
-echo ""
+
 # ============================================================
-# STEP 2: Check Docker
+# STEP 1: Check Docker
 # ============================================================
-echo "📦 Checking Docker..."
+print_status "Checking Docker..."
+
 if command -v docker &> /dev/null; then
-    echo "   ✅ Docker already installed: $(docker --version)"
+    print_success "Docker found"
 else
-    echo "   🔧 Docker is required but not found."
-    echo ""
+    print_status "Docker not found. Installing..."
     case "$OS_TYPE" in
         Linux)
-            echo "   Installing Docker on Linux..."
             curl -fsSL https://get.docker.com | sh
             sudo usermod -aG docker $USER
-            echo "   ✅ Docker installed. Please log out and back in."
-            echo "   Then run this script again."
+            echo "   Please log out and back in, then run this script again."
             exit 0
             ;;
         macOS)
-            echo "   📥 Please install Docker Desktop for macOS:"
-            echo "   → Download from: https://docker.com"
-            echo "   → Or run: brew install --cask docker"
-            echo ""
-            read -p "   Press Enter after you have installed Docker..."
+            echo "   Please install Docker Desktop from: https://docker.com"
+            echo "   Press Enter after installation..."
+            read
             ;;
         Windows)
-            echo "   📥 Please install Docker Desktop for Windows:"
-            echo "   → Download from: https://docker.com"
-            echo "   → Run the installer and restart your computer."
-            echo ""
-            read -p "   Press Enter after you have installed Docker..."
+            echo "   Please install Docker Desktop from: https://docker.com"
+            echo "   Press Enter after installation..."
+            read
             ;;
         *)
-            echo "   ❌ Unsupported OS. Please install Docker manually."
+            print_error "Unsupported OS. Please install Docker manually."
             exit 1
             ;;
     esac
 fi
-echo ""
+
 # ============================================================
-# STEP 3: Check Docker Compose
+# STEP 2: Check Docker Compose
 # ============================================================
-echo "📦 Checking Docker Compose..."
-if docker compose version &> /dev/null; then
-    echo "   ✅ Docker Compose available"
-elif command -v docker-compose &> /dev/null; then
-    echo "   ✅ Docker Compose available (old version)"
-else
-    echo "   ❌ Docker Compose not found."
-    echo "   It is included with Docker Desktop."
+if ! docker compose version &> /dev/null && ! command -v docker-compose &> /dev/null; then
+    print_error "Docker Compose not found. It is included with Docker Desktop."
     exit 1
 fi
-echo ""
+
 # ============================================================
-# STEP 4: Download docker-compose.yml
+# STEP 3: Download and Start AI Tutor
 # ============================================================
-echo "📥 Downloading AI Tutor configuration..."
+print_status "Setting up AI Tutor..."
+
 mkdir -p ~/ai-tutor
 cd ~/ai-tutor
-# Download the docker-compose.yml from GitHub
-curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/docker-compose.yml -o docker-compose.yml
-echo "   ✅ Configuration downloaded to ~/ai-tutor"
-echo ""
-# ============================================================
-# STEP 5: Start containers (in background) and display startup logs
-# ============================================================
 
-# --- BEGIN: Get Host IP ---
-# Get the host IP address for students to connect
+# Download docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/docker-compose.yml -o docker-compose.yml
+
+# Get Host IP
 HOST_IP=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^127\.' | grep -v '^172\.' | head -1)
 if [ -z "$HOST_IP" ]; then
     HOST_IP=$(hostname -I | awk '{print $1}')
 fi
 export STUDENT_URL="http://$HOST_IP:5004"
-echo "   📡 Host IP: $HOST_IP"
-# --- END: Get Host IP ---
 
-echo "🐳 Starting AI Tutor containers..."
-docker compose up -d
+# Start containers
+docker compose up -d > /dev/null 2>&1
 
-echo "   ⏳ Waiting for AI Tutor to start..."
+# ============================================================
+# STEP 4: Wait for AI Tutor to be ready
+# ============================================================
+print_status "Starting AI Tutor..."
 sleep 5
 
-# Display the startup logs so the user sees the URL
-echo ""
-echo "📋 AI Tutor Startup Logs:"
-docker compose logs --tail=20 ai-tutor
-echo ""
-
-# Extract the "Students connect to" URL from the logs
+# Display the student URL
 STUDENT_URL=$(docker compose logs ai-tutor | grep "STUDENTS CONNECT TO" | tail -1 | sed -E 's/.*(http:[^ ]*).*/\1/')
 if [ -n "$STUDENT_URL" ]; then
-    echo "   ✅ Students can connect at: $STUDENT_URL"
+    print_success "Students connect to: $STUDENT_URL"
 else
-    echo "   ⚠️ Could not detect student connection URL. Check your network settings."
+    STUDENT_URL="http://$HOST_IP:5004"
+    print_success "Students connect to: $STUDENT_URL"
 fi
-echo ""
-# ============================================================
-# STEP 6: Pull the AI Model
-# ============================================================
-echo "🧠 Downloading AI model (qwen2.5:1.5b)..."
-echo "   This may take 2-5 minutes depending on your internet speed."
 
-# Check if the model is already downloaded
-MODEL_EXISTS=$(docker exec ollama-server ollama list | grep "qwen2.5:1.5b" || true)
-if [ -n "$MODEL_EXISTS" ]; then
-    echo "   ✅ Model already downloaded"
-else
-    docker exec ollama-server ollama pull qwen2.5:1.5b
-    echo "   ✅ Model downloaded"
-fi
-echo ""
 # ============================================================
-# STEP 7: Optional Desktop Shortcut (Linux)
+# STEP 5: Pull AI Model (if needed)
+# ============================================================
+print_status "Checking AI model..."
+MODEL_EXISTS=$(docker exec ollama-server ollama list 2>/dev/null | grep "qwen2.5:1.5b" || true)
+if [ -z "$MODEL_EXISTS" ]; then
+    print_status "Downloading AI model (2-5 min)..."
+    docker exec ollama-server ollama pull qwen2.5:1.5b > /dev/null 2>&1
+    print_success "Model ready"
+else
+    print_success "Model already downloaded"
+fi
+
+# ============================================================
+# STEP 6: Desktop Shortcuts
 # ============================================================
 if [[ "$OS_TYPE" == "Linux" ]]; then
-    echo "🖥️ Creating desktop shortcut..."
     cat > ~/Desktop/ai-tutor.desktop << EOF
 [Desktop Entry]
 Name=AI Tutor
 Comment=Start the AI Teaching Assistant
-Exec=gnome-terminal -- bash -c "cd ~/ai-tutor && docker compose up"
+Exec=gnome-terminal -- bash -c "cd ~/ai-tutor && docker compose up; exec bash"
 Icon=utilities-terminal
 Terminal=false
 Type=Application
 Categories=Education;
 EOF
-    chmod +x ~/Desktop/ai-tutor.desktop 2>/dev/null || echo "   ⚠️ Could not create desktop shortcut"
+    chmod +x ~/Desktop/ai-tutor.desktop
+    print_success "Desktop shortcut created"
 fi
+
+if [[ "$OS_TYPE" == "Windows" ]]; then
+    cat > "$HOME/Desktop/start-ai-tutor.bat" << EOF
+@echo off
+echo Starting AI Teaching Assistant...
+cd /d %USERPROFILE%\ai-tutor
+docker compose up
+pause
+EOF
+    print_success "Desktop shortcut created"
+fi
+
+# ============================================================
+# STEP 7: Complete
+# ============================================================
 echo ""
-# ============================================================
-# STEP 8: Installation Complete
-# ============================================================
 echo "=========================================="
 echo "✅ Installation Complete!"
 echo "=========================================="
 echo ""
-echo "Your AI Tutor is now running in the background."
-echo ""
 echo "📚 Students connect to: $STUDENT_URL"
 echo ""
-echo "🔧 To view logs:"
-echo "   cd ~/ai-tutor && docker compose logs -f"
-echo ""
-echo "🛑 To stop the AI Tutor:"
+echo "🔧 To stop the AI Tutor:"
 echo "   cd ~/ai-tutor && docker compose down"
 echo ""
 echo "📧 Support: john.wandeto@dkut.ac.ke"
