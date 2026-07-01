@@ -47,12 +47,12 @@ esac
 # ============================================================
 # STEP 1: Check Docker
 # ============================================================
-print_status "Checking Docker..."
+print_status "Checking statu..."
 
 if command -v docker &> /dev/null; then
-    print_success "Docker found"
+    print_success "ok"
 else
-    print_status "Docker not found. Installing..."
+    print_status "Installing..."
     case "$OS_TYPE" in
         Linux)
             curl -fsSL https://get.docker.com | sh
@@ -152,7 +152,17 @@ docker compose up
 pause
 EOF
 fi
-
+# ============================================================
+# customize the stop command
+# ============================================================
+# Create a stop script
+cat > ~/ai-tutor/stop.sh << 'EOF'
+#!/bin/bash
+cd ~/ai-tutor
+docker compose down 2>/dev/null
+echo "✅ ndetos has stopped"
+EOF
+chmod +x ~/ai-tutor/stop.sh
 # ============================================================
 # STEP 7: Complete
 # ============================================================
