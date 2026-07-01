@@ -1,5 +1,5 @@
 #!/bin/bash
-# AI Teaching Assistant - One-Command Installer
+# ndetos AI Teaching Assistant - One-Command Installer
 # ============================================================
 # This script installs Docker (if needed), pulls the AI model,
 # and runs the AI Tutor in the background.
@@ -15,22 +15,8 @@ NC='\033[0m'
 # ============================================================
 # Helper Functions
 # ============================================================
-spinner() {
-    local pid=$1
-    local delay=0.1
-    local spinstr='|/-\'
-    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
-        local temp=${spinstr#?}
-        printf " [%c]  " "$spinstr"
-        local spinstr=$temp${spinstr%"$temp"}
-        sleep $delay
-        printf "\b\b\b\b\b\b"
-    done
-    printf "    \b\b\b\b"
-}
-
 print_status() {
-    echo -e "${BLUE}==>${NC} $1"
+    echo -e "${BLUE}➜${NC} $1"
 }
 
 print_success() {
@@ -46,7 +32,7 @@ print_error() {
 # ============================================================
 
 echo ""
-echo "🚀 AI Teaching Assistant Installer"
+echo "🚀 ndetos AI Teaching Assistant"
 echo "=========================================="
 
 # Detect OS
@@ -102,13 +88,14 @@ fi
 # ============================================================
 # STEP 3: Download and Start AI Tutor
 # ============================================================
-print_status "Setting up AI Tutor..."
+print_status "Installation in progress: please wait..."
+echo "   This will take about 3-7 minutes depending on your network."
 
 mkdir -p ~/ai-tutor
 cd ~/ai-tutor
 
 # Download docker-compose.yml
-curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/docker-compose.yml -o docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/docker-compose.yml -o docker-compose.yml > /dev/null 2>&1
 
 # Get Host IP
 HOST_IP=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^127\.' | grep -v '^172\.' | head -1)
@@ -123,29 +110,20 @@ docker compose up -d > /dev/null 2>&1
 # ============================================================
 # STEP 4: Wait for AI Tutor to be ready
 # ============================================================
-print_status "Starting AI Tutor..."
 sleep 5
 
 # Display the student URL
-STUDENT_URL=$(docker compose logs ai-tutor | grep "STUDENTS CONNECT TO" | tail -1 | sed -E 's/.*(http:[^ ]*).*/\1/')
-if [ -n "$STUDENT_URL" ]; then
-    print_success "Students connect to: $STUDENT_URL"
-else
+STUDENT_URL=$(docker compose logs ai-tutor 2>/dev/null | grep "STUDENTS CONNECT TO" | tail -1 | sed -E 's/.*(http:[^ ]*).*/\1/')
+if [ -z "$STUDENT_URL" ]; then
     STUDENT_URL="http://$HOST_IP:5004"
-    print_success "Students connect to: $STUDENT_URL"
 fi
 
 # ============================================================
 # STEP 5: Pull AI Model (if needed)
 # ============================================================
-print_status "Checking AI model..."
 MODEL_EXISTS=$(docker exec ollama-server ollama list 2>/dev/null | grep "qwen2.5:1.5b" || true)
 if [ -z "$MODEL_EXISTS" ]; then
-    print_status "Downloading AI model (2-5 min)..."
     docker exec ollama-server ollama pull qwen2.5:1.5b > /dev/null 2>&1
-    print_success "Model ready"
-else
-    print_success "Model already downloaded"
 fi
 
 # ============================================================
@@ -162,8 +140,7 @@ Terminal=false
 Type=Application
 Categories=Education;
 EOF
-    chmod +x ~/Desktop/ai-tutor.desktop
-    print_success "Desktop shortcut created"
+    chmod +x ~/Desktop/ai-tutor.desktop 2>/dev/null
 fi
 
 if [[ "$OS_TYPE" == "Windows" ]]; then
@@ -174,7 +151,6 @@ cd /d %USERPROFILE%\ai-tutor
 docker compose up
 pause
 EOF
-    print_success "Desktop shortcut created"
 fi
 
 # ============================================================
@@ -186,6 +162,7 @@ echo "✅ Installation Complete!"
 echo "=========================================="
 echo ""
 echo "📚 Students connect to: $STUDENT_URL"
+echo "💻 You connect to: http://localhost:5004"
 echo ""
 echo "🔧 To stop the AI Tutor:"
 echo "   cd ~/ai-tutor && docker compose down"
