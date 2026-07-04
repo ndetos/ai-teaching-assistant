@@ -10,6 +10,28 @@
     <meta property="og:description" content="You explain. They nod. You ask a question — silence. Give them a private AI tutor.">
     <meta property="og:url" content="https://ndetos.github.io/ai-teaching-assistant/">
     
+    <!-- ============================================================ -->
+    <!-- SECURITY HEADERS                                               -->
+    <!-- ============================================================ -->
+    <!-- Content Security Policy: Prevents XSS and injection attacks -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline';
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data:;
+        font-src 'self';
+        connect-src 'self';
+    ">
+    <!-- Prevent MIME type sniffing -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <!-- Prevent clickjacking -->
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <!-- Control referrer information -->
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <!-- Disable unnecessary browser features -->
+    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
+    <!-- ============================================================ -->
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #1a1a2e; background: #f8f9fa; }
@@ -242,7 +264,7 @@
             <button onclick="copyCommand()" style="margin-top: 15px; background: #e94560; color: white; padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer;">
                 📋 Copy Command
             </button>
-            <div id="copyFeedback" style="display: none; margin-top: 10px; color: #00ff88; font-size: 0.9rem;">
+            <div id="copyCommandFeedback" style="display: none; margin-top: 10px; color: #00ff88; font-size: 0.9rem;">
                 ✅ Copied! Paste it in your terminal.
             </div>
         </div>
@@ -303,7 +325,7 @@
             </div>
             
             <input type="text" id="emailToCopy" value="john.wandeto@dkut.ac.ke" style="position: absolute; left: -9999px;">
-            <div id="copyFeedback" style="display: none; background: #2e7d32; color: white; padding: 8px; border-radius: 8px; margin: 10px auto; max-width: 300px; text-align: center;">
+            <div id="copyEmailFeedback" style="display: none; background: #2e7d32; color: white; padding: 8px; border-radius: 8px; margin: 10px auto; max-width: 300px; text-align: center;">
                 ✅ Email copied! You can now paste it into your email client.
             </div>
             
@@ -393,7 +415,6 @@
         function getAIResponse(question) {
             let topic = findTopic(question);
             
-            // If no topic matched (score 0), fallback to contact
             if (!topic) {
                 return "I appreciate your question, but I am a demo focused specifically on the AI Teaching Assistant product. For the most accurate answer, please reach out directly:\n\n📧 **Email:** john.wandeto@dkut.ac.ke\n📱 **WhatsApp:** +254 783 808 800\n\nDr. Wandeto responds within a few hours and would be happy to help with your specific question.";
             }
@@ -401,17 +422,14 @@
             let data = knowledgeBase[topic];
             let response = data.response;
             
-            // Add conversation memory
             conversationHistory.push({ role: "user", content: question, topic: topic });
             if (conversationHistory.length > 6) conversationHistory.shift();
             
-            // Add follow-up suggestions
             if (data.followUp && data.followUp.length > 0) {
                 let randomFollowUp = data.followUp[Math.floor(Math.random() * data.followUp.length)];
                 response += "\n\n💡 You might also want to ask: \"" + randomFollowUp + "\"";
             }
             
-            // Add conversational transition if topic changed
             if (conversationHistory.length > 1) {
                 let lastTopic = conversationHistory[conversationHistory.length - 2]?.topic;
                 if (lastTopic && lastTopic !== topic) {
@@ -429,18 +447,14 @@
             
             let messagesDiv = document.getElementById('chatMessages');
             
-            // Add user message
             messagesDiv.innerHTML += `<div class="chat-message user"><span>${escapeHtml(question)}</span></div>`;
             input.value = '';
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
             
-            // Add typing indicator
             messagesDiv.innerHTML += `<div class="chat-message bot"><span class="chat-typing">🤖 Thinking...</span></div>`;
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
             
-            // Simulate realistic typing delay
             setTimeout(() => {
-                // Remove typing indicator
                 messagesDiv.removeChild(messagesDiv.lastChild);
                 let answer = getAIResponse(question);
                 messagesDiv.innerHTML += `<div class="chat-message bot"><span>🤖 ${escapeHtml(answer)}</span></div>`;
@@ -449,18 +463,40 @@
         }
         
         function escapeHtml(text) {
+            if (!text) return '';
             let div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
         
         function copyEmail() {
-            const copyText = document.getElementById('emailToCopy');
-            copyText.select();
-            copyText.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(copyText.value);
+            const email = 'john.wandeto@dkut.ac.ke';
             
-            const feedback = document.getElementById('copyFeedback');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(email)
+                    .then(() => showEmailFeedback())
+                    .catch(() => fallbackCopyEmail(email));
+            } else {
+                fallbackCopyEmail(email);
+            }
+        }
+        
+        function fallbackCopyEmail(text) {
+            const input = document.createElement('input');
+            input.value = text;
+            document.body.appendChild(input);
+            input.select();
+            try {
+                document.execCommand('copy');
+                showEmailFeedback();
+            } catch (err) {
+                alert('Please copy the email manually:\n\n' + text);
+            }
+            document.body.removeChild(input);
+        }
+        
+        function showEmailFeedback() {
+            const feedback = document.getElementById('copyEmailFeedback');
             feedback.style.display = 'block';
             setTimeout(() => {
                 feedback.style.display = 'none';
@@ -472,13 +508,42 @@
         });
         
         function copyCommand() {
-    const cmd = 'curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/install.sh | bash';
-    navigator.clipboard.writeText(cmd);
-    const feedback = document.getElementById('copyFeedback');
-    feedback.style.display = 'block';
-    setTimeout(() => { feedback.style.display = 'none'; }, 3000);
-}
+            const user = 'ndetos';
+            const repo = 'ai-teaching-assistant';
+            const branch = 'master';
+            const script = 'install.sh';
+            const cmd = `curl -fsSL https://raw.githubusercontent.com/${user}/${repo}/${branch}/${script} | bash`;
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(cmd)
+                    .then(() => showCommandFeedback())
+                    .catch(() => fallbackCopy(cmd));
+            } else {
+                fallbackCopy(cmd);
+            }
+        }
         
+        function fallbackCopy(text) {
+            const input = document.createElement('input');
+            input.value = text;
+            document.body.appendChild(input);
+            input.select();
+            try {
+                document.execCommand('copy');
+                showCommandFeedback();
+            } catch (err) {
+                alert('Please copy the command manually:\n\n' + text);
+            }
+            document.body.removeChild(input);
+        }
+        
+        function showCommandFeedback() {
+            const feedback = document.getElementById('copyCommandFeedback');
+            feedback.style.display = 'block';
+            setTimeout(() => {
+                feedback.style.display = 'none';
+            }, 3000);
+        }
     </script>
 </body>
 </html>
