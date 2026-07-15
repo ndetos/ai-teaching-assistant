@@ -325,7 +325,7 @@
     </section>
     
  <!-- ============================================================ -->
-<!-- CONTACT SECTION WITH TALLY FORM                                -->
+<!-- CONTACT SECTION WITH TALLY FORM (NO IFRAME)                   -->
 <!-- ============================================================ -->
 <section id="contact" class="contact" style="background: #1a1a2e; padding: 80px 0;">
     <div class="container" style="max-width: 900px; margin: 0 auto; padding: 0 20px;">
@@ -336,35 +336,33 @@
                 Ready to Break the Silence?
             </h2>
             <p style="color: rgba(255,255,255,0.7); font-size: 1.1rem; max-width: 500px; margin: 0 auto;">
-                Fill out the form below, or click the link to open it in a new window.
+                I would love to hear from you. Send me a message and I will get back to you within 24 hours.
             </p>
         </div>
 
-        <!-- Tally Form Container -->
+        <!-- Contact Card -->
         <div style="
-            background: white; 
-            border-radius: 20px; 
-            padding: 20px; 
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            text-align: center;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            max-width: 700px;
+            margin: 0 auto;
         ">
-            <!-- Iframe with improved attributes -->
-            <iframe 
-                src="https://tally.so/r/xX1D4o" 
-                width="100%" 
-                height="550" 
-                frameborder="0" 
-                marginheight="0" 
-                marginwidth="0" 
-                title="Contact Form"
-                loading="lazy"
-                style="display: block; width: 100%; height: 550px; border-radius: 12px; background: #f8f9fa; min-height: 400px;">
-            </iframe>
-            
-            <!-- Fallback link if iframe fails -->
-            <div style="margin-top: 15px; padding: 15px; background: #f0f4ff; border-radius: 12px;">
-                <p style="color: #555; font-size: 0.9rem; margin-bottom: 10px;">
-                    👋 If the form does not load, click the button below:
+            <!-- Left: Contact Form Button -->
+            <div style="
+                background: white; 
+                border-radius: 20px; 
+                padding: 40px 30px; 
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                text-align: center;
+                transition: transform 0.3s ease;
+            "
+            onmouseover="this.style.transform='translateY(-5px)'"
+            onmouseout="this.style.transform='translateY(0)'">
+                <div style="font-size: 3rem; margin-bottom: 20px;">📝</div>
+                <h3 style="color: #1a1a2e; font-size: 1.3rem; margin-bottom: 10px;">Contact Form</h3>
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">
+                    Fill out my secure form and I will respond within 24 hours.
                 </p>
                 <a href="https://tally.so/r/xX1D4o" 
                    target="_blank" 
@@ -372,52 +370,59 @@
                        display: inline-block;
                        background: #1a73e8;
                        color: white;
-                       padding: 10px 24px;
+                       padding: 14px 32px;
                        border-radius: 50px;
                        text-decoration: none;
                        font-weight: 600;
-                       font-size: 0.95rem;
-                       transition: background 0.3s ease;
+                       font-size: 1rem;
+                       transition: all 0.3s ease;
                    "
                    onmouseover="this.style.background='#1557b0'"
                    onmouseout="this.style.background='#1a73e8'">
-                    📝 Open Form in New Window
+                    📝 Open Contact Form
+                </a>
+            </div>
+
+            <!-- Right: WhatsApp -->
+            <div style="
+                background: white; 
+                border-radius: 20px; 
+                padding: 40px 30px; 
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                text-align: center;
+                transition: transform 0.3s ease;
+            "
+            onmouseover="this.style.transform='translateY(-5px)'"
+            onmouseout="this.style.transform='translateY(0)'">
+                <div style="font-size: 3rem; margin-bottom: 20px;">📱</div>
+                <h3 style="color: #1a1a2e; font-size: 1.3rem; margin-bottom: 10px;">WhatsApp</h3>
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">
+                    Chat with me directly on WhatsApp for quick questions.
+                </p>
+                <a href="https://wa.me/254783808800" 
+                   target="_blank" 
+                   style="
+                       display: inline-block;
+                       background: #25D366;
+                       color: white;
+                       padding: 14px 32px;
+                       border-radius: 50px;
+                       text-decoration: none;
+                       font-weight: 600;
+                       font-size: 1rem;
+                       transition: all 0.3s ease;
+                   "
+                   onmouseover="this.style.background='#1ebe5c'"
+                   onmouseout="this.style.background='#25D366'">
+                    💬 Chat on WhatsApp
                 </a>
             </div>
         </div>
 
-        <!-- Alternative Contact Options -->
-        <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <p style="color: rgba(255,255,255,0.6); font-size: 0.95rem; margin-bottom: 15px;">
-                Or reach me directly on WhatsApp
-            </p>
-            <a href="https://wa.me/254783808800" 
-               style="
-                   display: inline-flex; 
-                   align-items: center; 
-                   gap: 12px; 
-                   background: #25D366; 
-                   color: white; 
-                   padding: 14px 32px; 
-                   border-radius: 50px; 
-                   text-decoration: none; 
-                   font-weight: 600; 
-                   font-size: 1rem; 
-                   transition: all 0.3s ease;
-                   box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
-               "
-               onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(37, 211, 102, 0.4)';"
-               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(37, 211, 102, 0.3)';"
-               target="_blank">
-                <span style="font-size: 1.2rem;">📱</span>
-                Contact on WhatsApp
-            </a>
-        </div>
-
         <!-- Footer Note -->
-        <div style="text-align: center; margin-top: 30px;">
+        <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.1);">
             <p style="color: rgba(255,255,255,0.4); font-size: 0.8rem;">
-                I typically respond within 24 hours. Your message is private and secure.
+                🔒 Your message is private and secure. I typically respond within 24 hours.
             </p>
         </div>
 
