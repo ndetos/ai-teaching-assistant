@@ -51,87 +51,154 @@
     <script src="https://openpanel.dev/op1.js" defer async></script>
     
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #1a1a2e; background: #f8f9fa; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #1a1a2e; background: #f8f9fa; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    
+    .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 60px 0 50px; text-align: center; }
+    .header h1 { font-size: 2.8rem; margin-bottom: 20px; font-weight: 700; }
+    .header .subtitle { font-size: 1.2rem; opacity: 0.9; max-width: 700px; margin: 0 auto 25px; }
+    .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; margin-bottom: 20px; }
+    .cta-button { display: inline-block; background: #e94560; color: white; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; margin: 8px; border: none; cursor: pointer; transition: all 0.3s ease; }
+    .cta-button:hover { background: #c62a47; transform: translateY(-2px); }
+    .cta-button-secondary { background: transparent; border: 2px solid white; }
+    
+    .section-title { text-align: center; font-size: 2rem; margin-bottom: 15px; }
+    .section-subtitle { text-align: center; color: #666; margin-bottom: 40px; max-width: 700px; margin-left: auto; margin-right: auto; }
+    
+    .silence-section { background: #1a1a2e; color: white; padding: 60px 0; text-align: center; }
+    .silence-quote { font-size: 1.8rem; font-style: italic; max-width: 800px; margin: 0 auto 30px; line-height: 1.4; }
+    .silence-quote::before { content: "“"; font-size: 4rem; opacity: 0.5; display: block; }
+    .silence-quote::after { content: "”"; font-size: 4rem; opacity: 0.5; display: block; }
+    
+    .workflow { padding: 60px 0; background: white; }
+    .workflow-steps { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 40px; }
+    .workflow-step { background: #f8f9fa; border-radius: 16px; padding: 25px; flex: 1; min-width: 200px; text-align: center; border-top: 4px solid #1a73e8; }
+    .workflow-number { background: #1a73e8; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-weight: bold; font-size: 1.2rem; }
+    .workflow-step h3 { margin-bottom: 10px; }
+    .workflow-step p { color: #666; font-size: 0.9rem; }
+    
+    .benefits { padding: 60px 0; background: #f8f9fa; }
+    .benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
+    .benefit-card { background: white; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .benefit-icon { font-size: 2rem; margin-bottom: 15px; }
+    .benefit-card h3 { margin-bottom: 10px; }
+    .benefit-card p { color: #666; font-size: 0.9rem; }
+    
+    .demo { background: #1a1a2e; color: white; padding: 60px 0; }
+    .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; margin-top: 30px; }
+    .demo-card { background: #16213e; border-radius: 16px; padding: 25px; border: 1px solid #2a3a5e; }
+    .chat-interface { background: white; border-radius: 12px; overflow: hidden; margin-top: 15px; }
+    .chat-header { background: #1a73e8; color: white; padding: 12px; text-align: center; font-size: 0.9rem; }
+    .chat-messages { height: 220px; overflow-y: auto; padding: 12px; background: #f5f5f5; font-size: 0.85rem; }
+    .chat-message { margin-bottom: 10px; display: flex; }
+    .chat-message.user { justify-content: flex-end; }
+    .chat-message.user span { background: #1a73e8; color: white; padding: 6px 12px; border-radius: 18px; max-width: 85%; }
+    .chat-message.bot span { background: #e9ecef; color: #333; padding: 6px 12px; border-radius: 18px; max-width: 85%; }
+    .chat-typing { background: #e9ecef; color: #666; padding: 6px 12px; border-radius: 18px; display: inline-block; font-style: italic; }
+    .chat-input-area { display: flex; padding: 10px; background: white; border-top: 1px solid #e0e0e0; }
+    .chat-input { flex: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 24px; font-size: 0.85rem; }
+    .chat-send { background: #1a73e8; color: white; border: none; border-radius: 24px; padding: 8px 16px; margin-left: 8px; cursor: pointer; }
+    
+    .phone-mockup { background: #111; border-radius: 32px; padding: 12px; max-width: 280px; margin: 0 auto; }
+    .phone-screen { background: white; border-radius: 24px; overflow: hidden; font-size: 0.75rem; }
+    .phone-header { background: #1a73e8; color: white; padding: 8px; text-align: center; font-weight: bold; }
+    .phone-chat { height: 200px; overflow-y: auto; padding: 8px; background: #f5f5f5; }
+    .phone-chat .msg { margin-bottom: 6px; padding: 4px 8px; border-radius: 12px; max-width: 85%; }
+    .phone-chat .student { background: #1a73e8; color: white; margin-left: auto; text-align: right; }
+    .phone-chat .ai { background: #e9ecef; color: #333; }
+    
+    .analytics-preview { background: #0f0f1a; border-radius: 12px; padding: 20px; font-family: monospace; font-size: 0.75rem; }
+    .analytics-table { width: 100%; border-collapse: collapse; color: #ccc; }
+    .analytics-table th, .analytics-table td { padding: 6px; text-align: left; border-bottom: 1px solid #2a3a5e; }
+    .analytics-table th { color: #1a73e8; }
+    .warning { color: #e94560; }
+    
+    .pricing { padding: 60px 0; background: white; }
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; max-width: 900px; margin: 0 auto; }
+    .pricing-card { background: #f8f9fa; padding: 30px; border-radius: 16px; text-align: center; }
+    .pricing-card.featured { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; transform: scale(1.02); }
+    .price { font-size: 2.5rem; font-weight: bold; margin: 15px 0; }
+    .pricing-card ul { list-style: none; margin: 20px 0; text-align: left; }
+    .pricing-card li { margin-bottom: 10px; padding-left: 25px; position: relative; }
+    .pricing-card li:before { content: "✓"; position: absolute; left: 0; color: #e94560; }
+    
+    .contact { background: #1a1a2e; color: white; padding: 50px 0; text-align: center; }
+    .contact-info { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-top: 20px; }
+    .contact-item a { color: #e94560; text-decoration: none; }
+    
+    .teacher-badge { background: #e8f5e9; padding: 40px 0; text-align: center; }
+    .footer { background: #0f0f1a; color: #666; text-align: center; padding: 25px; font-size: 0.8rem; }
+    
+    /* ============================================================ */
+    /* RESPONSIVE DESIGN - IMPROVED FOR MOBILE AND TABLET            */
+    /* ============================================================ */
+    
+    /* Tablets and smaller laptops (max-width: 1024px) */
+    @media (max-width: 1024px) {
+        .header h1 { font-size: 2.4rem; }
+        .silence-quote { font-size: 1.6rem; }
+        .demo-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    /* Mobile devices (max-width: 768px) */
+    @media (max-width: 768px) {
+        .header { padding: 40px 0 30px; }
+        .header h1 { font-size: 1.8rem; }
+        .header .subtitle { font-size: 1rem; }
         
-        .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 60px 0 50px; text-align: center; }
-        .header h1 { font-size: 2.8rem; margin-bottom: 20px; font-weight: 700; }
-        .header .subtitle { font-size: 1.2rem; opacity: 0.9; max-width: 700px; margin: 0 auto 25px; }
-        .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; margin-bottom: 20px; }
-        .cta-button { display: inline-block; background: #e94560; color: white; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; margin: 8px; border: none; cursor: pointer; transition: all 0.3s ease; }
-        .cta-button:hover { background: #c62a47; transform: translateY(-2px); }
-        .cta-button-secondary { background: transparent; border: 2px solid white; }
+        .section-title { font-size: 1.6rem; }
         
-        .section-title { text-align: center; font-size: 2rem; margin-bottom: 15px; }
-        .section-subtitle { text-align: center; color: #666; margin-bottom: 40px; max-width: 700px; margin-left: auto; margin-right: auto; }
+        .silence-quote { font-size: 1.3rem; }
+        .silence-quote::before, .silence-quote::after { font-size: 2.5rem; }
         
-        .silence-section { background: #1a1a2e; color: white; padding: 60px 0; text-align: center; }
-        .silence-quote { font-size: 1.8rem; font-style: italic; max-width: 800px; margin: 0 auto 30px; line-height: 1.4; }
-        .silence-quote::before { content: "“"; font-size: 4rem; opacity: 0.5; display: block; }
-        .silence-quote::after { content: "”"; font-size: 4rem; opacity: 0.5; display: block; }
+        .workflow-steps { flex-direction: column; align-items: center; }
+        .workflow-step { max-width: 100%; width: 100%; }
         
-        .workflow { padding: 60px 0; background: white; }
-        .workflow-steps { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 40px; }
-        .workflow-step { background: #f8f9fa; border-radius: 16px; padding: 25px; flex: 1; min-width: 200px; text-align: center; border-top: 4px solid #1a73e8; }
-        .workflow-number { background: #1a73e8; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-weight: bold; font-size: 1.2rem; }
-        .workflow-step h3 { margin-bottom: 10px; }
-        .workflow-step p { color: #666; font-size: 0.9rem; }
+        .benefits-grid { grid-template-columns: 1fr; }
         
-        .benefits { padding: 60px 0; background: #f8f9fa; }
-        .benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
-        .benefit-card { background: white; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .benefit-icon { font-size: 2rem; margin-bottom: 15px; }
-        .benefit-card h3 { margin-bottom: 10px; }
-        .benefit-card p { color: #666; font-size: 0.9rem; }
+        .demo-grid { grid-template-columns: 1fr; }
+        .demo-card { padding: 20px; }
+        .chat-messages { height: 280px; font-size: 0.9rem; }
         
-        .demo { background: #1a1a2e; color: white; padding: 60px 0; }
-        .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; margin-top: 30px; }
-        .demo-card { background: #16213e; border-radius: 16px; padding: 25px; border: 1px solid #2a3a5e; }
-        .chat-interface { background: white; border-radius: 12px; overflow: hidden; margin-top: 15px; }
-        .chat-header { background: #1a73e8; color: white; padding: 12px; text-align: center; font-size: 0.9rem; }
-        .chat-messages { height: 220px; overflow-y: auto; padding: 12px; background: #f5f5f5; font-size: 0.85rem; }
-        .chat-message { margin-bottom: 10px; display: flex; }
-        .chat-message.user { justify-content: flex-end; }
-        .chat-message.user span { background: #1a73e8; color: white; padding: 6px 12px; border-radius: 18px; max-width: 85%; }
-        .chat-message.bot span { background: #e9ecef; color: #333; padding: 6px 12px; border-radius: 18px; max-width: 85%; }
-        .chat-typing { background: #e9ecef; color: #666; padding: 6px 12px; border-radius: 18px; display: inline-block; font-style: italic; }
-        .chat-input-area { display: flex; padding: 10px; background: white; border-top: 1px solid #e0e0e0; }
-        .chat-input { flex: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 24px; font-size: 0.85rem; }
-        .chat-send { background: #1a73e8; color: white; border: none; border-radius: 24px; padding: 8px 16px; margin-left: 8px; cursor: pointer; }
+        .phone-mockup { max-width: 100%; }
         
-        .phone-mockup { background: #111; border-radius: 32px; padding: 12px; max-width: 280px; margin: 0 auto; }
-        .phone-screen { background: white; border-radius: 24px; overflow: hidden; font-size: 0.75rem; }
-        .phone-header { background: #1a73e8; color: white; padding: 8px; text-align: center; font-weight: bold; }
-        .phone-chat { height: 200px; overflow-y: auto; padding: 8px; background: #f5f5f5; }
-        .phone-chat .msg { margin-bottom: 6px; padding: 4px 8px; border-radius: 12px; max-width: 85%; }
-        .phone-chat .student { background: #1a73e8; color: white; margin-left: auto; text-align: right; }
-        .phone-chat .ai { background: #e9ecef; color: #333; }
+        .pricing-grid { grid-template-columns: 1fr; max-width: 400px; }
+        .pricing-card.featured { transform: none; }
         
-        .analytics-preview { background: #0f0f1a; border-radius: 12px; padding: 20px; font-family: monospace; font-size: 0.75rem; }
-        .analytics-table { width: 100%; border-collapse: collapse; color: #ccc; }
-        .analytics-table th, .analytics-table td { padding: 6px; text-align: left; border-bottom: 1px solid #2a3a5e; }
-        .analytics-table th { color: #1a73e8; }
-        .warning { color: #e94560; }
+        .contact-info { flex-direction: column; align-items: center; gap: 15px; }
         
-        .pricing { padding: 60px 0; background: white; }
-        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; max-width: 900px; margin: 0 auto; }
-        .pricing-card { background: #f8f9fa; padding: 30px; border-radius: 16px; text-align: center; }
-        .pricing-card.featured { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; transform: scale(1.02); }
-        .price { font-size: 2.5rem; font-weight: bold; margin: 15px 0; }
-        .pricing-card ul { list-style: none; margin: 20px 0; text-align: left; }
-        .pricing-card li { margin-bottom: 10px; padding-left: 25px; position: relative; }
-        .pricing-card li:before { content: "✓"; position: absolute; left: 0; color: #e94560; }
+        .teacher-badge { padding: 30px 0; }
+        .teacher-badge h2 { font-size: 1.4rem; }
         
-        .contact { background: #1a1a2e; color: white; padding: 50px 0; text-align: center; }
-        .contact-info { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-top: 20px; }
-        .contact-item a { color: #e94560; text-decoration: none; }
+        .footer { font-size: 0.7rem; padding: 20px; }
+    }
+    
+    /* Small phones (max-width: 480px) */
+    @media (max-width: 480px) {
+        .header { padding: 30px 0 20px; }
+        .header h1 { font-size: 1.5rem; }
+        .badge { font-size: 0.65rem; padding: 4px 10px; }
         
-        .teacher-badge { background: #e8f5e9; padding: 40px 0; text-align: center; }
-        .footer { background: #0f0f1a; color: #666; text-align: center; padding: 25px; font-size: 0.8rem; }
+        .section-title { font-size: 1.3rem; }
+        .section-subtitle { font-size: 0.9rem; }
         
-        @media (max-width: 700px) { .header h1 { font-size: 1.8rem; } .silence-quote { font-size: 1.3rem; } .demo-grid { grid-template-columns: 1fr; } }
-    </style>
+        .silence-quote { font-size: 1.1rem; }
+        
+        .cta-button { padding: 10px 20px; font-size: 0.9rem; }
+        
+        .demo-card { padding: 15px; }
+        .chat-messages { height: 250px; font-size: 0.8rem; }
+        .chat-input { font-size: 0.8rem; padding: 6px 10px; }
+        .chat-send { font-size: 0.8rem; padding: 6px 12px; }
+        
+        .pricing-card { padding: 20px; }
+        .price { font-size: 2rem; }
+        
+        .contact { padding: 30px 0; }
+        .contact h2 { font-size: 1.4rem; }
+    }
+</style>
 </head>
 <body>
     <!-- Header -->
@@ -389,7 +456,7 @@
             onmouseover="this.style.transform='translateY(-5px)'"
             onmouseout="this.style.transform='translateY(0)'">
                 <div style="font-size: 3rem; margin-bottom: 20px;">📝</div>
-                <h3 style="color: #1a1a2e; font-size: 1.3rem; margin-bottom: 10px;">email me</h3>
+                <h3 style="color: #1a1a2e; font-size: 1.3rem; margin-bottom: 10px;">Send a message</h3>
                 <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">
                     Fill out the secure form and I will respond within 24 hours.
                 </p>
