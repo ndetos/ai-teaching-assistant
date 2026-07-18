@@ -336,59 +336,113 @@
         </div>
     </section>
     
-    <!-- One-Command Installer -->
+<!-- One-Command Installer & Uninstaller -->
 <section id="installer" style="background: #f0f4ff; padding: 60px 0;">
     <div class="container">
-        <h2 class="section-title">🚀 Get Started in One Command</h2>
+        <h2 class="section-title">🚀 One Command to Install</h2>
         <p class="section-subtitle">Copy and paste this command into your terminal. Everything else is automatic.</p>
         
+        <!-- INSTALL COMMAND -->
         <div style="background: #1a1a2e; border-radius: 16px; padding: 30px; max-width: 800px; margin: 30px auto; text-align: center;">
             <code style="color: #00ff88; font-size: 1.1rem; word-break: break-all; background: transparent; display: block; padding: 15px;">
                 curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/install.sh | bash
             </code>
-            <button onclick="copyCommand()" style="margin-top: 15px; background: #e94560; color: white; padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer;">
+            <button onclick="copyInstallCommand()" style="margin-top: 15px; background: #e94560; color: white; padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer;">
                 📋 Copy Command
             </button>
-            <div id="copyCommandFeedback" style="display: none; margin-top: 10px; color: #00ff88; font-size: 0.9rem;">
+            <div id="copyInstallFeedback" style="display: none; margin-top: 10px; color: #00ff88; font-size: 0.9rem;">
                 ✅ Copied! Paste it in your terminal.
             </div>
         </div>
         
+        <!-- ============================================================ -->
+        <!-- UNINSTALL SECTION (IMPROVED)                                   -->
+        <!-- ============================================================ -->
+        <div style="margin-top: 50px; border-top: 2px solid #ddd; padding-top: 40px;">
+            <h2 class="section-title" style="font-size: 1.6rem;">🗑️ One Command to Uninstall</h2>
+            <p class="section-subtitle">Remove everything — including the AI model and container images.</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 900px; margin: 30px auto;">
+                
+                <!-- Linux/macOS/WSL Uninstall -->
+                <div style="background: #1a1a2e; border-radius: 16px; padding: 25px; text-align: center;">
+                    <div style="color: #ff6b6b; font-size: 2rem; margin-bottom: 10px;">🐧</div>
+                    <h4 style="color: white; margin-bottom: 10px;">Linux / macOS / WSL</h4>
+                    <code style="color: #ff6b6b; font-size: 0.8rem; word-break: break-all; background: #2a2a4a; display: block; padding: 12px; border-radius: 8px; text-align: left;">
+                        curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/uninstall.sh | bash
+                    </code>
+                    <button onclick="copyUninstallCommand('unix')" style="margin-top: 12px; background: #dc3545; color: white; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                        📋 Copy
+                    </button>
+                    <div id="copyUninstallUnixFeedback" style="display: none; margin-top: 8px; color: #00ff88; font-size: 0.8rem;">
+                        ✅ Copied!
+                    </div>
+                    <p style="color: #888; font-size: 0.7rem; margin-top: 10px;">
+                        ⚠️ Will ask if you want to remove Docker too
+                    </p>
+                </div>
+                
+                <!-- Windows Uninstall -->
+                <div style="background: #1a1a2e; border-radius: 16px; padding: 25px; text-align: center;">
+                    <div style="color: #ff6b6b; font-size: 2rem; margin-bottom: 10px;">🪟</div>
+                    <h4 style="color: white; margin-bottom: 10px;">Windows (CMD / PowerShell)</h4>
+                    <code style="color: #ff6b6b; font-size: 0.8rem; word-break: break-all; background: #2a2a4a; display: block; padding: 12px; border-radius: 8px; text-align: left;">
+                        curl.exe -fsSL -o uninstall.bat https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/uninstall.bat &amp;&amp; uninstall.bat
+                    </code>
+                    <button onclick="copyUninstallCommand('windows')" style="margin-top: 12px; background: #dc3545; color: white; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                        📋 Copy
+                    </button>
+                    <div id="copyUninstallWindowsFeedback" style="display: none; margin-top: 8px; color: #00ff88; font-size: 0.8rem;">
+                        ✅ Copied!
+                    </div>
+                    <p style="color: #888; font-size: 0.7rem; margin-top: 10px;">
+                        ⚠️ Will ask if you want to remove Docker too
+                    </p>
+                </div>
+            </div>
+            
+            <div style="max-width: 700px; margin: 20px auto; text-align: center;">
+                <p style="font-size: 0.85rem; color: #666;">
+                    <strong>📋 What gets removed:</strong> Containers, Docker images, volumes, networks, and all AI Tutor files.
+                    <br>Docker itself is kept unless you choose to remove it during uninstall.
+                </p>
+            </div>
+        </div>
+        
         <!-- Installation instructions -->
-<div style="max-width: 700px; margin: 30px auto; text-align: left; background: #f8f9fa; padding: 25px; border-radius: 12px;">
-    <h4 style="margin-bottom: 15px;">💻 How to run the command:</h4>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-        <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #2e7d32;">
-            <strong>🐧 Linux</strong>
-            <ol style="margin: 8px 0 0 20px; font-size: 0.85rem; color: #333;">
-                <li>Open Terminal (<code>Ctrl+Alt+T</code>)</li>
-                <li>Paste the command and press Enter</li>
-            </ol>
+        <div style="max-width: 700px; margin: 30px auto; text-align: left; background: #f8f9fa; padding: 25px; border-radius: 12px;">
+            <h4 style="margin-bottom: 15px;">💻 How to run the command:</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #2e7d32;">
+                    <strong>🐧 Linux</strong>
+                    <ol style="margin: 8px 0 0 20px; font-size: 0.85rem; color: #333;">
+                        <li>Open Terminal (<code>Ctrl+Alt+T</code>)</li>
+                        <li>Paste the command and press Enter</li>
+                    </ol>
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #1a73e8;">
+                    <strong>🍎 macOS</strong>
+                    <ol style="margin: 8px 0 0 20px; font-size: 0.85rem; color: #333;">
+                        <li>Open Terminal from Launchpad</li>
+                        <li>Paste the command and press Enter</li>
+                    </ol>
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #e94560; grid-column: 1 / -1;">
+                    <strong>🪟 Windows</strong>
+                    <ol style="margin: 8px 0 0 20px; font-size: 0.85rem; color: #333;">
+                        <li>Press <code>Win + R</code>, type <code>cmd</code>, and press Enter</li>
+                        <li>Right-click in the black window and select "Paste"</li>
+                        <li>Press Enter to run the command</li>
+                    </ol>
+                </div>
+            </div>
         </div>
-        <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #1a73e8;">
-            <strong>🍎 macOS</strong>
-            <ol style="margin: 8px 0 0 20px; font-size: 0.85rem; color: #333;">
-                <li>Open Terminal from Launchpad</li>
-                <li>Paste the command and press Enter</li>
-            </ol>
-        </div>
-        <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #e94560; grid-column: 1 / -1;">
-            <strong>🪟 Windows</strong>
-            <ol style="margin: 8px 0 0 20px; font-size: 0.85rem; color: #333;">
-                <li>Press <code>Win + R</code>, type <code>cmd</code>, and press Enter</li>
-                <li>Right-click in the black window and select "Paste"</li>
-                <li>Press Enter to run the command</li>
-            </ol>
-        </div>
-    </div>
-</div>
         
         <div style="max-width: 700px; margin: 0 auto; font-size: 0.9rem; color: #555; text-align: left;">
             <p><strong>⚠️ Requirements:</strong></p>
             <ul style="list-style: none; padding: 0;">
                 <li style="margin-bottom: 8px; padding-left: 25px; position: relative;">💻 <strong>8GB RAM</strong> (16GB recommended)</li>
                 <li style="margin-bottom: 8px; padding-left: 25px; position: relative;">📦 <strong>15GB free disk space</strong> (for the AI model)</li>
-                
             </ul>
             <p style="margin-top: 15px; font-size: 0.8rem; color: #888;">
                 📜 Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.en.html" target="_blank">AGPL-3.0</a>
@@ -655,89 +709,109 @@
             return div.innerHTML;
         }
         
-        function copyEmail() {
-            const email = 'john.wandeto@dkut.ac.ke';
-            
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(email)
-                    .then(() => showEmailFeedback())
-                    .catch(() => fallbackCopyEmail(email));
-            } else {
-                fallbackCopyEmail(email);
-            }
-        }
-        
-        function fallbackCopyEmail(text) {
-            const input = document.createElement('input');
-            input.value = text;
-            document.body.appendChild(input);
-            input.select();
-            try {
-                document.execCommand('copy');
-                showEmailFeedback();
-            } catch (err) {
-                alert('Please copy the email manually:\n\n' + text);
-            }
-            document.body.removeChild(input);
-        }
-        
-        function showEmailFeedback() {
-            const feedback = document.getElementById('copyEmailFeedback');
-            feedback.style.display = 'block';
-            setTimeout(() => {
-                feedback.style.display = 'none';
-            }, 3000);
-        }
-        
         document.getElementById('chatInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') sendMessage();
         });
         
-        function copyCommand() {
-            const user = 'ndetos';
-            const repo = 'ai-teaching-assistant';
-            const branch = 'master';
-            const script = 'install.sh';
-            const cmd = `curl -fsSL https://raw.githubusercontent.com/${user}/${repo}/${branch}/${script} | bash`;
+        // ============================================================
+        // CONFIGURATION - Update these values when needed
+        // ============================================================
+        const REPO_CONFIG = {
+            user: 'ndetos',
+            repo: 'ai-teaching-assistant',
+            branch: 'master'
+        };
+
+        function getInstallCommand() {
+            return `curl -fsSL https://raw.githubusercontent.com/${REPO_CONFIG.user}/${REPO_CONFIG.repo}/${REPO_CONFIG.branch}/install.sh | bash`;
+        }
+
+        function getUninstallCommandUnix() {
+            return `curl -fsSL https://raw.githubusercontent.com/${REPO_CONFIG.user}/${REPO_CONFIG.repo}/${REPO_CONFIG.branch}/uninstall.sh | bash`;
+        }
+
+        function getUninstallCommandWindows() {
+            return `curl.exe -fsSL -o uninstall.bat https://raw.githubusercontent.com/${REPO_CONFIG.user}/${REPO_CONFIG.repo}/${REPO_CONFIG.branch}/uninstall.bat && uninstall.bat`;
+        }
+
+        // ============================================================
+        // COPY FUNCTIONS
+        // ============================================================
+
+        function copyInstallCommand() {
+            const cmd = getInstallCommand();
             
-                // Track the event in OpenPanel
             if (typeof op !== 'undefined') {
-                op('track', 'app_install_attempt', {
-                    'button': 'copy_command',
+                op('track', 'copy_install_command', {
+                    'button': 'copy_install',
                     'location': 'landing_page'
                 });
             }
             
+            copyToClipboard(cmd, 'copyInstallFeedback');
+        }
+
+        function copyUninstallCommand(os) {
+            let cmd = '';
+            let feedbackId = '';
             
+            if (os === 'unix') {
+                cmd = getUninstallCommandUnix();
+                feedbackId = 'copyUninstallUnixFeedback';
+                
+                if (typeof op !== 'undefined') {
+                    op('track', 'copy_uninstall_unix', {
+                        'os': 'unix',
+                        'location': 'landing_page'
+                    });
+                }
+            } else if (os === 'windows') {
+                cmd = getUninstallCommandWindows();
+                feedbackId = 'copyUninstallWindowsFeedback';
+                
+                if (typeof op !== 'undefined') {
+                    op('track', 'copy_uninstall_windows', {
+                        'os': 'windows',
+                        'location': 'landing_page'
+                    });
+                }
+            }
+            
+            copyToClipboard(cmd, feedbackId);
+        }
+
+        function copyToClipboard(text, feedbackId) {
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(cmd)
-                    .then(() => showCommandFeedback())
-                    .catch(() => fallbackCopy(cmd));
+                navigator.clipboard.writeText(text)
+                    .then(() => showFeedback(feedbackId))
+                    .catch(() => fallbackCopyToClipboard(text, feedbackId));
             } else {
-                fallbackCopy(cmd);
+                fallbackCopyToClipboard(text, feedbackId);
             }
         }
-        
-        function fallbackCopy(text) {
+
+        function fallbackCopyToClipboard(text, feedbackId) {
             const input = document.createElement('input');
             input.value = text;
             document.body.appendChild(input);
             input.select();
             try {
                 document.execCommand('copy');
-                showCommandFeedback();
+                showFeedback(feedbackId);
             } catch (err) {
                 alert('Please copy the command manually:\n\n' + text);
             }
             document.body.removeChild(input);
         }
-        
-        function showCommandFeedback() {
-            const feedback = document.getElementById('copyCommandFeedback');
-            feedback.style.display = 'block';
-            setTimeout(() => {
-                feedback.style.display = 'none';
-            }, 3000);
+
+        function showFeedback(feedbackId) {
+            const feedback = document.getElementById(feedbackId);
+            if (feedback) {
+                feedback.style.display = 'block';
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                }, 3000);
+            }
         }
     </script>
 </body>
