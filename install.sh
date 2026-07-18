@@ -175,7 +175,7 @@ export STUDENT_URL="http://$HOST_IP:5004"
 # ============================================================
 print_status "Starting up ndetosAI components (this may take a few minutes)..."
 
-# Function to show spinner with timer
+# Function to show spinner with timer only (no Docker output)
 show_spinner() {
     local pid=$1
     local delay=0.75
@@ -186,6 +186,7 @@ show_spinner() {
         local temp=${spinstr#?}
         local current_time=$(date +%s)
         local elapsed=$((current_time - start_time))
+        # Clear line and show only spinner + time
         printf "\r   [%c] %d seconds elapsed... " "$spinstr" "$elapsed"
         local spinstr=$temp${spinstr%"$temp"}
         sleep $delay
@@ -194,16 +195,19 @@ show_spinner() {
     local exit_code=$?
     local current_time=$(date +%s)
     local elapsed=$((current_time - start_time))
+    
+    # Clear the spinner line
+    printf "\r   "
     if [ $exit_code -eq 0 ]; then
-        printf "\r   ✅ Containers started in %d seconds   \n" "$elapsed"
+        printf "✅ Containers started in %d seconds   \n" "$elapsed"
     else
-        printf "\r   ❌ Failed to start containers after %d seconds   \n" "$elapsed"
+        printf "❌ Failed to start containers after %d seconds   \n" "$elapsed"
         exit $exit_code
     fi
 }
 
-# Run docker compose up in background with spinner
-docker compose up -d 2>&1 &
+# Run docker compose up with output suppressed, but show errors if any
+docker compose up -d 2>&1 | grep -v "Pulling\|Pulled\|Image\|Digest\|Status\|Download\|Extracting" &
 show_spinner $!
 
 # ============================================================
