@@ -170,13 +170,30 @@ fi
 
 export STUDENT_URL="http://$HOST_IP:5004"
 
-# Start containers
-print_status "Installing AI Tutor (3-7 minutes, please wait)..."
-docker compose up -d > /dev/null 2>&1
+# ============================================================
+# Start containers with PROGRESS OUTPUT (not hidden)
+# ============================================================
+print_status "Starting containers (this may take a few minutes)..."
+docker compose up -d
 
-# Wait and pull model
-sleep 5
-docker exec ollama-server ollama pull qwen2.5:1.5b > /dev/null 2>&1
+# ============================================================
+# Pull model with PROGRESS OUTPUT (not hidden)
+# ============================================================
+print_status "Pulling AI model (qwen2.5:1.5b) - this may take 5-10 minutes..."
+print_info "Progress will show below:"
+docker exec ollama-server ollama pull qwen2.5:1.5b
+
+# ============================================================
+# Verify everything is running
+# ============================================================
+print_status "Verifying installation..."
+sleep 3
+
+if curl -s -o /dev/null -w "%{http_code}" "http://localhost:5004" | grep -q "200\|302\|301"; then
+    print_success "AI Tutor is running!"
+else
+    print_warning "Service may still be starting. Check: $STUDENT_URL"
+fi
 
 # ============================================================
 # STEP 3: Create Shortcuts
