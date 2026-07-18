@@ -59,14 +59,23 @@ rm -f "$HOME/Desktop/start-ai-tutor.command" 2>/dev/null
 print_success "AI Tutor removed"
 
 # ============================================================
-# STEP 4: Ask about Docker removal
+# STEP 4: Ask about Docker removal (FIXED - reads from /dev/tty)
 # ============================================================
 if command -v docker &> /dev/null; then
     echo ""
     echo "Do you want to uninstall Docker too?"
     echo "  1) Yes, remove everything including Docker"
     echo "  2) No, keep Docker"
-    read -p "Enter choice (1 or 2): " choice
+    echo ""
+    
+    # Read from /dev/tty to ensure interactive input works with curl | bash
+    if [ -t 0 ]; then
+        # Script is running interactively
+        read -p "Enter choice (1 or 2): " choice
+    else
+        # Script is piped (curl | bash) - read from terminal directly
+        read -p "Enter choice (1 or 2): " choice < /dev/tty
+    fi
 
     if [ "$choice" = "1" ]; then
         print_status "Removing Docker..."
