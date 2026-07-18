@@ -205,8 +205,6 @@ else
     docker compose up -d
     exit $exit_code
 fi
-}
-
 # Run docker compose up with output suppressed, but show errors if any
 docker compose up -d 2>&1 | grep -v "Pulling\|Pulled\|Image\|Digest\|Status\|Download\|Extracting" &
 show_spinner $!
