@@ -171,17 +171,28 @@ fi
 export STUDENT_URL="http://$HOST_IP:5004"
 
 # ============================================================
-# Start containers with PROGRESS OUTPUT (not hidden)
+# Start containers with CLEAN PROGRESS (hiding technical details)
 # ============================================================
-print_status "Starting containers (this may take a few minutes)..."
-docker compose up -d
+print_status "Starting up ndetosAI components (this may take a few minutes)..."
+docker compose up -d 2>&1 | while IFS= read -r line; do
+    # Show only the progress percentage and image pull status
+    if [[ $line =~ ([0-9]+\.[0-9]+[MG]B)/([0-9]+\.[0-9]+[MG]B) ]]; then
+        echo -e "   ${BASH_REMATCH[1]}/${BASH_REMATCH[2]} downloaded"
+    elif [[ $line =~ ([0-9]+)/([0-9]+) ]]; then
+        echo -e "   Step ${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
+    fi
+done
 
 # ============================================================
-# Pull model with PROGRESS OUTPUT (not hidden)
+# Pull model with CLEAN PROGRESS
 # ============================================================
-print_status "Pulling AI model (qwen2.5:1.5b) - this may take 5-10 minutes..."
-print_info "Progress will show below:"
-docker exec ollama-server ollama pull qwen2.5:1.5b
+print_status "Downloading the AI model (3.2GB - may take 5-15 minutes)..."
+docker exec ollama-server ollama pull qwen2.5:1.5b 2>&1 | while IFS= read -r line; do
+    # Extract and show only the download progress percentage
+    if [[ $line =~ ([0-9]+)% ]]; then
+        echo -e "   ${BASH_REMATCH[1]}% complete"
+    fi
+done
 
 # ============================================================
 # Verify everything is running
