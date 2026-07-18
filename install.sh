@@ -175,33 +175,35 @@ export STUDENT_URL="http://$HOST_IP:5004"
 # ============================================================
 print_status "Starting up ndetosAI components (this may take a few minutes)..."
 
-start_time=$(date +%s)
-
-# Redirect ALL output to /dev/null (both stdout AND stderr)
-docker compose up -d 2>&1 > /dev/null &
-pid=$!
-
-while kill -0 $pid 2>/dev/null; do
-    current_time=$(date +%s)
-    elapsed=$((current_time - start_time))
-    printf "\r   ⏳ %d seconds elapsed... " "$elapsed"
-    sleep 1
-done
-
-wait $pid 2>/dev/null
-exit_code=$?
-
-printf "\r   "
-if [ $exit_code -eq 0 ]; then
-    current_time=$(date +%s)
-    elapsed=$((current_time - start_time))
-    printf "✅ Containers started in %d seconds   \n" "$elapsed"
-else
-    printf "❌ Failed to start containers   \n"
-    # Show the error by running compose up without suppression
-    docker compose up -d 2>&1
-    exit $exit_code
-fi
+# Function to show spinner with timer only (no Docker output)
+show_spinner() {
+    local pid=$1
+    local delay=0.75
+    local spinstr='|/-\'
+    local start_time=$(date +%s)
+    
+    while kill -0 $pid 2>/dev/null; do
+        local temp=${spinstr#?}
+        local current_time=$(date +%s)
+        local elapsed=$((current_time - start_time))
+        # Clear line and show only spinner + time
+        printf "\r   [%c] %d seconds elapsed... " "$spinstr" "$elapsed"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+    done
+    wait $pid
+    local exit_code=$?
+    local current_time=$(date +%s)
+    local elapsed=$((current_time - start_time))
+    
+    # Clear the spinner line
+    printf "\r   "
+    if [ $exit_code -eq 0 ]; then
+        printf "✅ Containers started in %d seconds   \n" "$elapsed"
+    else
+        printf "❌ Failed to start containers after %d seconds   \n" "$elapsed"
+        exit $exit_code
+    fi
 }
 
 # Run docker compose up with output suppressed, but show errors if any
