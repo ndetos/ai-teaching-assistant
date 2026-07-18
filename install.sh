@@ -188,9 +188,11 @@ done
 # ============================================================
 print_status "Downloading the AI model (3.2GB - may take 5-15 minutes)..."
 docker exec ollama-server ollama pull qwen2.5:1.5b 2>&1 | while IFS= read -r line; do
-    # Extract and show only the download progress percentage
+     # Extract percentage (e.g., "1%", "45%")
     if [[ $line =~ ([0-9]+)% ]]; then
-        echo -e "   ${BASH_REMATCH[1]}% complete"
+        percent=${BASH_REMATCH[1]}
+        # Use \r to return to start of line, overwrite with new percentage
+        printf "\r   %3d%% complete" "$percent"
     fi
 done
 

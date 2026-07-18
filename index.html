@@ -198,6 +198,28 @@
         .contact { padding: 30px 0; }
         .contact h2 { font-size: 1.4rem; }
     }
+    /* Collapsible animation */
+#uninstallDetails {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive for mobile - already in your CSS */
+@media (max-width: 768px) {
+    #uninstallDetails > div {
+        grid-template-columns: 1fr !important;
+    }
+}
 </style>
 </head>
 <body>
@@ -355,59 +377,70 @@
             </div>
         </div>
         
-        <!-- ============================================================ -->
-        <!-- UNINSTALL SECTION (IMPROVED)                                   -->
-        <!-- ============================================================ -->
-        <div style="margin-top: 50px; border-top: 2px solid #ddd; padding-top: 40px;">
-            <h2 class="section-title" style="font-size: 1.6rem;">🗑️ One Command to Uninstall</h2>
-            <p class="section-subtitle">Remove everything — including the AI model and container images.</p>
+<!-- ============================================================ -->
+<!-- UNINSTALL SECTION - COLLAPSIBLE                                -->
+<!-- ============================================================ -->
+<div style="margin-top: 50px; border-top: 2px solid #ddd; padding-top: 40px;">
+    <h2 class="section-title" style="font-size: 1.6rem;">🗑️ One Command to Uninstall</h2>
+    <p class="section-subtitle">
+        Remove everything — including the AI model and container images. 
+        <a href="javascript:void(0)" onclick="toggleUninstall()" style="color: #e94560; text-decoration: none; font-weight: 600;">
+            See more <span id="toggleIcon">▼</span>
+        </a>
+    </p>
+    
+    <!-- Collapsible Details -->
+    <div id="uninstallDetails" style="display: none; max-width: 900px; margin: 20px auto;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 900px; margin: 30px auto;">
-                
-                <!-- Linux/macOS/WSL Uninstall -->
-                <div style="background: #1a1a2e; border-radius: 16px; padding: 25px; text-align: center;">
-                    <div style="color: #ff6b6b; font-size: 2rem; margin-bottom: 10px;">🐧</div>
-                    <h4 style="color: white; margin-bottom: 10px;">Linux / macOS / WSL</h4>
-                    <code style="color: #ff6b6b; font-size: 0.8rem; word-break: break-all; background: #2a2a4a; display: block; padding: 12px; border-radius: 8px; text-align: left;">
-                        curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/uninstall.sh | bash
-                    </code>
-                    <button onclick="copyUninstallCommand('unix')" style="margin-top: 12px; background: #dc3545; color: white; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
-                        📋 Copy
-                    </button>
-                    <div id="copyUninstallUnixFeedback" style="display: none; margin-top: 8px; color: #00ff88; font-size: 0.8rem;">
-                        ✅ Copied!
-                    </div>
-                    <p style="color: #888; font-size: 0.7rem; margin-top: 10px;">
-                        ⚠️ Will ask if you want to remove Docker too
-                    </p>
+            <!-- Linux/macOS/WSL Uninstall -->
+            <div style="background: #1a1a2e; border-radius: 16px; padding: 25px; text-align: center;">
+                <div style="color: #ff6b6b; font-size: 2rem; margin-bottom: 10px;">🐧</div>
+                <h4 style="color: white; margin-bottom: 10px;">Linux / macOS / WSL</h4>
+                <code style="color: #ff6b6b; font-size: 0.8rem; word-break: break-all; background: #2a2a4a; display: block; padding: 12px; border-radius: 8px; text-align: left;">
+                    curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/uninstall.sh | bash
+                </code>
+                <button onclick="copyUninstallCommand('unix')" style="margin-top: 12px; background: #dc3545; color: white; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                    📋 Copy
+                </button>
+                <div id="copyUninstallUnixFeedback" style="display: none; margin-top: 8px; color: #00ff88; font-size: 0.8rem;">
+                    ✅ Copied!
                 </div>
-                
-                <!-- Windows Uninstall -->
-                <div style="background: #1a1a2e; border-radius: 16px; padding: 25px; text-align: center;">
-                    <div style="color: #ff6b6b; font-size: 2rem; margin-bottom: 10px;">🪟</div>
-                    <h4 style="color: white; margin-bottom: 10px;">Windows (CMD / PowerShell)</h4>
-                    <code style="color: #ff6b6b; font-size: 0.8rem; word-break: break-all; background: #2a2a4a; display: block; padding: 12px; border-radius: 8px; text-align: left;">
-                        curl.exe -fsSL -o uninstall.bat https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/uninstall.bat &amp;&amp; uninstall.bat
-                    </code>
-                    <button onclick="copyUninstallCommand('windows')" style="margin-top: 12px; background: #dc3545; color: white; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
-                        📋 Copy
-                    </button>
-                    <div id="copyUninstallWindowsFeedback" style="display: none; margin-top: 8px; color: #00ff88; font-size: 0.8rem;">
-                        ✅ Copied!
-                    </div>
-                    <p style="color: #888; font-size: 0.7rem; margin-top: 10px;">
-                        ⚠️ Will ask if you want to remove Docker too
-                    </p>
-                </div>
+                <p style="color: #888; font-size: 0.7rem; margin-top: 10px;">
+                    ⚠️ Will ask if you want to remove Docker too
+                </p>
             </div>
             
-            <div style="max-width: 700px; margin: 20px auto; text-align: center;">
-                <p style="font-size: 0.85rem; color: #666;">
-                    <strong>📋 What gets removed:</strong> Containers, Docker images, volumes, networks, and all AI Tutor files.
-                    <br>Docker itself is kept unless you choose to remove it during uninstall.
+            <!-- Windows Uninstall -->
+            <div style="background: #1a1a2e; border-radius: 16px; padding: 25px; text-align: center;">
+                <div style="color: #ff6b6b; font-size: 2rem; margin-bottom: 10px;">🪟</div>
+                <h4 style="color: white; margin-bottom: 10px;">Windows (CMD / PowerShell)</h4>
+                <code style="color: #ff6b6b; font-size: 0.8rem; word-break: break-all; background: #2a2a4a; display: block; padding: 12px; border-radius: 8px; text-align: left;">
+                    curl.exe -fsSL -o uninstall.bat https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/uninstall.bat &amp;&amp; uninstall.bat
+                </code>
+                <button onclick="copyUninstallCommand('windows')" style="margin-top: 12px; background: #dc3545; color: white; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                    📋 Copy
+                </button>
+                <div id="copyUninstallWindowsFeedback" style="display: none; margin-top: 8px; color: #00ff88; font-size: 0.8rem;">
+                    ✅ Copied!
+                </div>
+                <p style="color: #888; font-size: 0.7rem; margin-top: 10px;">
+                    ⚠️ Will ask if you want to remove Docker too
                 </p>
             </div>
         </div>
+        
+        <div style="max-width: 700px; margin: 20px auto; text-align: center; background: #f8f9fa; padding: 15px; border-radius: 8px;">
+            <p style="font-size: 0.85rem; color: #555;">
+                <strong>📋 What gets removed:</strong> Containers, Docker images, volumes, networks, and all AI Tutor files.
+                <br>Docker itself is kept unless you choose to remove it during uninstall.
+            </p>
+            <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">
+                💡 Need help? Contact: <a href="mailto:john.wandeto@dkut.ac.ke" style="color: #1a73e8;">john.wandeto@dkut.ac.ke</a>
+            </p>
+        </div>
+    </div>
+</div>
         
         <!-- Installation instructions -->
         <div style="max-width: 700px; margin: 30px auto; text-align: left; background: #f8f9fa; padding: 25px; border-radius: 12px;">
@@ -451,29 +484,36 @@
     </div>
 </section>
     
-    <!-- Pricing -->
-    <section id="pricing" class="pricing">
-        <div class="container">
-            <h2 class="section-title">Simple Pricing</h2>
-            <p class="section-subtitle">One-time setup. No monthly fees.</p>
-            <div class="pricing-grid">
-                <div class="pricing-card">
-                    <h3>DIY</h3>
-                    <div class="price">Free</div>
-                    <ul><li>Open source scripts</li><li>GitHub docs</li></ul>
-                    <button onclick="document.getElementById('installer').scrollIntoView({behavior: 'smooth'})" style="background:#1a73e8; color:white; padding:12px 24px; border-radius:50px; border:none; cursor:pointer;">🚀 Get Started</button>
-                </div>
-                <div class="pricing-card featured">
-                    <h3>Done For You</h3>
-                    <div class="price">KSh 1,000 <small>intro</small></div>
-                    <ul><li>Full setup on your laptop</li><li>Your materials indexed</li><li>1-hour training</li><li>WhatsApp support 30 days</li></ul>
-                    <button onclick="document.getElementById('contact').scrollIntoView({behavior: 'smooth'})" style="background:#e94560; color:white; padding:12px 24px; border-radius:50px; border:none; cursor:pointer;">Book Now →</button>
-                </div>
+    <!-- ============================================================ -->
+<!-- FAQ                            -->
+<!-- ============================================================ -->
+<section style="background: #f8f9fa; padding: 60px 0;">
+    <div class="container">
+        <h2 class="section-title">Quick Questions</h2>
+        <div style="max-width: 700px; margin: 0 auto;">
+            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h4 style="color: #1a1a2e;">What equipment do I need?</h4>
+                <p style="color: #555; font-size: 0.9rem;">Any laptop with 8GB RAM (16GB recommended) and 15GB free disk space. Windows, macOS, or Linux.</p>
             </div>
-            <p style="text-align:center; margin-top:20px; font-size:0.8rem;">Regular: KSh 5,000 — first 20 at KSh 1,000</p>
+            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h4 style="color: #1a1a2e;">Does it work without internet?</h4>
+                <p style="color: #555; font-size: 0.9rem;">Yes. Once installed, it runs entirely on your laptop. Students connect via classroom Wi-Fi (no internet needed).</p>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h4 style="color: #1a1a2e;">Is student data private?</h4>
+                <p style="color: #555; font-size: 0.9rem;">100%. Everything runs locally on your laptop. No cloud. No third-party servers. Your data never leaves your control.</p>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h4 style="color: #1a1a2e;">How long does installation take?</h4>
+                <p style="color: #555; font-size: 0.9rem;">3-15 minutes. One command. The script handles everything automatically.</p>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h4 style="color: #1a1a2e;">What if I get stuck?</h4>
+                <p style="color: #555; font-size: 0.9rem;">Contact App creator directly: 📧 <a href="mailto:john.wandeto@dkut.ac.ke" style="color: #1a73e8;">john.wandeto@dkut.ac.ke</a> | 📱 <a href="https://wa.me/254783808800" style="color: #25D366;">WhatsApp</a>. I respond within a few hours.</p>
+            </div>
         </div>
-    </section>
-    
+    </div>
+</section>
  <!-- ============================================================ -->
 <!-- CONTACT SECTION WITH TALLY FORM (NO IFRAME)                   -->
 <!-- ============================================================ -->
@@ -813,6 +853,33 @@
                 }, 3000);
             }
         }
+        // ============================================================
+// TOGGLE UNINSTALL DETAILS
+// ============================================================
+function toggleUninstall() {
+    const details = document.getElementById('uninstallDetails');
+    const icon = document.getElementById('toggleIcon');
+    
+    if (details.style.display === 'none' || details.style.display === '') {
+        details.style.display = 'block';
+        icon.textContent = '▲';
+        // Track the expand event in OpenPanel
+        if (typeof op !== 'undefined') {
+            op('track', 'uninstall_details_expanded', {
+                'location': 'landing_page'
+            });
+        }
+    } else {
+        details.style.display = 'none';
+        icon.textContent = '▼';
+    }
+}
+
+// Handle window resize for responsive behavior
+window.addEventListener('resize', function() {
+    // On small screens, the grid becomes 1 column automatically via CSS
+    // This just ensures the toggle stays functional
+});
     </script>
 </body>
 </html>
