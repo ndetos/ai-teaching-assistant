@@ -171,7 +171,7 @@ fi
 export STUDENT_URL="http://$HOST_IP:5004"
 
 # ============================================================
-# Start containers with CLEAN PROGRESS (hiding technical details)
+# Start containers - CLEAN TIMER (no spinner conflicts)
 # ============================================================
 print_status "Starting up ndetosAI components (this may take a few minutes)..."
 
@@ -205,22 +205,21 @@ else
     docker compose up -d
     exit $exit_code
 fi
-# Run docker compose up with output suppressed, but show errors if any
-docker compose up -d 2>&1 | grep -v "Pulling\|Pulled\|Image\|Digest\|Status\|Download\|Extracting" &
-show_spinner $!
 
 # ============================================================
 # Pull model with CLEAN PROGRESS
 # ============================================================
 print_status "Downloading the AI model (3.2GB - may take 5-15 minutes)..."
 docker exec ollama-server ollama pull qwen2.5:1.5b 2>&1 | while IFS= read -r line; do
-     # Extract percentage (e.g., "1%", "45%")
+    # Extract percentage (e.g., "1%", "45%")
     if [[ $line =~ ([0-9]+)% ]]; then
         percent=${BASH_REMATCH[1]}
         # Use \r to return to start of line, overwrite with new percentage
         printf "\r   %3d%% complete" "$percent"
     fi
 done
+# Print a newline after completion
+echo ""
 
 # ============================================================
 # Verify everything is running
