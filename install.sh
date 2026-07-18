@@ -174,14 +174,37 @@ export STUDENT_URL="http://$HOST_IP:5004"
 # Start containers with CLEAN PROGRESS (hiding technical details)
 # ============================================================
 print_status "Starting up ndetosAI components (this may take a few minutes)..."
-docker compose up -d 2>&1 | while IFS= read -r line; do
-    # Show only the progress percentage and image pull status
-    if [[ $line =~ ([0-9]+\.[0-9]+[MG]B)/([0-9]+\.[0-9]+[MG]B) ]]; then
-        echo -e "   ${BASH_REMATCH[1]}/${BASH_REMATCH[2]} downloaded"
-    elif [[ $line =~ ([0-9]+)/([0-9]+) ]]; then
-        echo -e "   Step ${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
+
+# Function to show spinner with timer
+show_spinner() {
+    local pid=$1
+    local delay=0.75
+    local spinstr='|/-\'
+    local start_time=$(date +%s)
+    
+    while kill -0 $pid 2>/dev/null; do
+        local temp=${spinstr#?}
+        local current_time=$(date +%s)
+        local elapsed=$((current_time - start_time))
+        printf "\r   [%c] %d seconds elapsed... " "$spinstr" "$elapsed"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+    done
+    wait $pid
+    local exit_code=$?
+    local current_time=$(date +%s)
+    local elapsed=$((current_time - start_time))
+    if [ $exit_code -eq 0 ]; then
+        printf "\r   ✅ Containers started in %d seconds   \n" "$elapsed"
+    else
+        printf "\r   ❌ Failed to start containers after %d seconds   \n" "$elapsed"
+        exit $exit_code
     fi
-done
+}
+
+# Run docker compose up in background with spinner
+docker compose up -d 2>&1 &
+show_spinner $!
 
 # ============================================================
 # Pull model with CLEAN PROGRESS
