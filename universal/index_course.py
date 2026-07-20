@@ -1,17 +1,36 @@
 #!/usr/bin/env python3
 """
-index_course.py - Index course materials for AI Tutor
+index_course.py - Index course materials with sentence-transformers + faiss-cpu
 Usage: python3 index_course.py /path/to/course-materials/ -o knowledge_base.pkl
 """
 
 import os
 import sys
+import re
 import pickle
 import argparse
-import re
 from pathlib import Path
 
-# Optional imports with fallbacks
+# Import sentence-transformers (will download all-MiniLM-L6-v2 on first use)
+try:
+    from sentence_transformers import SentenceTransformer
+except ImportError:
+    print("❌ sentence-transformers not installed. Run: pip install sentence-transformers")
+    sys.exit(1)
+
+try:
+    import numpy as np
+except ImportError:
+    print("❌ numpy not installed. Run: pip install numpy")
+    sys.exit(1)
+
+try:
+    import faiss
+except ImportError:
+    print("❌ faiss-cpu not installed. Run: pip install faiss-cpu")
+    sys.exit(1)
+
+# Optional imports for file parsing
 try:
     import PyPDF2
 except ImportError:
@@ -79,7 +98,6 @@ def extract_text_from_file(file_path):
 
 def detect_week(filename, content):
     """Try to detect which week the material belongs to"""
-    # Look for week patterns in filename or content
     week_patterns = [
         r'[Ww]eek\s*(\d+)',
         r'[Ll]esson\s*(\d+)',
@@ -90,42 +108,41 @@ def detect_week(filename, content):
     ]
     
     for pattern in week_patterns:
-        # Check filename
         match = re.search(pattern, filename)
         if match:
             week_num = int(match.group(1))
-            if 1 <= week_num <= 52:  # Sanity check
+            if 1 <= week_num <= 52:
                 return week_num
         
-        # Check content (first 500 chars)
         match = re.search(pattern, content[:500])
         if match:
             week_num = int(match.group(1))
             if 1 <= week_num <= 52:
                 return week_num
     
-    return 0  # Unknown week
+    return 0
 
 
 def chunk_content(content, filename, week, max_chunk_size=1500):
     """Split content into smaller chunks for better retrieval"""
     chunks = []
+    chunk_metadata = []
     
-    # First try to split by headings or sections
+    # Try to split by headings or sections
     sections = re.split(r'\n\s*(?=#+\s|\d+\.\s|[A-Z][A-Z\s]+:)', content)
     
     if len(sections) > 1:
         for section in sections:
             section = section.strip()
             if len(section) > 100:
-                chunks.append({
+                chunks.append(section[:2000])
+                chunk_metadata.append({
                     'week': week,
                     'source': filename,
-                    'type': 'section',
-                    'content': section[:2000]
+                    'type': 'section'
                 })
     else:
-        # If no clear sections, split by paragraphs
+        # Split by paragraphs
         paragraphs = re.split(r'\n\s*\n+', content)
         current_chunk = ""
         for para in paragraphs:
@@ -135,30 +152,29 @@ def chunk_content(content, filename, week, max_chunk_size=1500):
             if len(current_chunk) + len(para) < max_chunk_size:
                 current_chunk += "\n" + para
             else:
-                if current_chunk:
-                    chunks.append({
+                if current_chunk and len(current_chunk) > 100:
+                    chunks.append(current_chunk.strip()[:2000])
+                    chunk_metadata.append({
                         'week': week,
                         'source': filename,
-                        'type': 'chunk',
-                        'content': current_chunk.strip()[:2000]
+                        'type': 'chunk'
                     })
                 current_chunk = para
         
         if current_chunk and len(current_chunk) > 100:
-            chunks.append({
+            chunks.append(current_chunk.strip()[:2000])
+            chunk_metadata.append({
                 'week': week,
                 'source': filename,
-                'type': 'chunk',
-                'content': current_chunk.strip()[:2000]
+                'type': 'chunk'
             })
     
-    return chunks
+    return chunks, chunk_metadata
 
 
 def index_course_materials(materials_path, output_path, course_info=None):
-    """Index all course materials in a directory"""
+    """Index course materials using sentence-transformers + faiss-cpu"""
     materials_path = Path(materials_path)
-    knowledge_base = []
     
     if not materials_path.exists():
         print(f"❌ Error: Path '{materials_path}' does not exist")
@@ -181,63 +197,87 @@ def index_course_materials(materials_path, output_path, course_info=None):
     
     print(f"📄 Found {len(files)} files to process...")
     
-    # Add course info as a knowledge item
-    if course_info:
-        knowledge_base.append({
-            'week': 0,
-            'source': 'course_info',
-            'type': 'metadata',
-            'content': f"Course: {course_info.get('course_code', 'Unknown')} - {course_info.get('course_name', 'Unknown')}\nInstructor: {course_info.get('instructor', 'Unknown')}\nInstitution: {course_info.get('institution', 'Unknown')}"
-        })
+    # Store all chunks and metadata
+    all_chunks = []
+    all_metadata = []
+    file_count = 0
     
+    # Process each file
     for i, file_path in enumerate(files, 1):
         print(f"   [{i}/{len(files)}] Processing: {file_path.name}")
         
-        # Extract text content
         try:
             content = extract_text_from_file(file_path)
         except Exception as e:
             print(f"      ⚠️  Error reading file: {e}")
             continue
         
-        # Detect week
-        week = detect_week(file_path.name, content)
-        
-        # Skip if no content
         if not content or len(content) < 50:
             print(f"      ⚠️  Skipping (insufficient content)")
             continue
         
-        # Add the full file as one entry
-        knowledge_base.append({
+        week = detect_week(file_path.name, content)
+        file_count += 1
+        
+        # Chunk the content
+        chunks, metadata = chunk_content(content, file_path.name, week)
+        
+        # Also add the full document as one entry
+        chunks.append(content[:3000])
+        metadata.append({
             'week': week,
             'source': file_path.name,
-            'type': 'document',
-            'content': content[:3000],
-            'filename': str(file_path)
+            'type': 'document'
         })
         
-        # Also add chunks for better retrieval
-        chunks = chunk_content(content, file_path.name, week)
-        knowledge_base.extend(chunks)
+        all_chunks.extend(chunks)
+        all_metadata.extend(metadata)
     
-    # Save the knowledge base
+    if not all_chunks:
+        print("❌ No content extracted from files")
+        return
+    
+    print(f"\n🧠 Generating embeddings for {len(all_chunks)} chunks...")
+    print("   ⏳ This will download ~420 MB model on first run")
+    
+    # Load the embedding model (downloads all-MiniLM-L6-v2 on first use)
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    
+    # Create embeddings for all chunks
+    embeddings = model.encode(all_chunks, show_progress_bar=True)
+    
+    print(f"🏗️  Building FAISS index...")
+    dimension = embeddings.shape[1]
+    index = faiss.IndexFlatL2(dimension)
+    index.add(embeddings.astype('float32'))
+    
+    # Save everything
+    data = {
+        'chunks': all_chunks,
+        'metadata': all_metadata,
+        'embeddings': embeddings,
+        'index': index,
+        'model_name': 'all-MiniLM-L6-v2',
+        'course_info': course_info
+    }
+    
     with open(output_path, 'wb') as f:
-        pickle.dump(knowledge_base, f)
+        pickle.dump(data, f)
     
     # Show summary
     weeks = {}
-    for item in knowledge_base:
-        w = item.get('week', 0)
+    for meta in all_metadata:
+        w = meta.get('week', 0)
         weeks[w] = weeks.get(w, 0) + 1
     
-    print(f"\n✅ Indexed {len(knowledge_base)} items from {len(files)} files")
+    print(f"\n✅ Indexed {len(all_chunks)} chunks from {file_count} files")
     print(f"   Weeks: {', '.join(f'Week {w}({c})' for w, c in sorted(weeks.items()))}")
     print(f"📚 Saved to: {output_path}")
+    print(f"🔍 Model: all-MiniLM-L6-v2 (semantic search)")
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Index course materials for AI Tutor')
+    parser = argparse.ArgumentParser(description='Index course materials with semantic search')
     parser.add_argument('materials_path', help='Path to course materials directory')
     parser.add_argument('-o', '--output', default='knowledge_base.pkl', 
                         help='Output file path for knowledge base')
