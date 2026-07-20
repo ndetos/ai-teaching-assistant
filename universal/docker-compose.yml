@@ -1,0 +1,35 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-server
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+
+  ai-tutor:
+    image: ndetos/ai-tutor-sim:latest
+    container_name: ai-tutor
+    ports:
+      - "5004:5004"
+    environment:
+      - OLLAMA_HOST=ollama
+      - STUDENT_URL=${STUDENT_URL:-http://localhost:5004}
+      # Course customization - set these via install.sh
+      - COURSE_CODE=${COURSE_CODE:-Your Course}
+      - COURSE_NAME=${COURSE_NAME:-Your Course}
+      - INSTRUCTOR=${INSTRUCTOR:-Your Instructor}
+      - INSTITUTION=${INSTITUTION:-Your Institution}
+      - TUTOR_NAME=${TUTOR_NAME:-ndetos}
+    volumes:
+      # Mount custom course materials for indexing (optional)
+      - ./course-materials:/app/course-materials:ro
+      # Mount the generated knowledge base
+      - ./knowledge:/app/knowledge:ro
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+volumes:
+  ollama_data:

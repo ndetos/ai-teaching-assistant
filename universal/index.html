@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>AI Teaching Assistant | Stop the Silence. Start Teaching.</title>
+    <meta name="description" content="You explain. They nod. You ask a question — silence. Give them a private AI tutor. Built by a trained teacher (B.Ed + PhD CS).">
+    <meta name="author" content="Dr. John M. Wandeto">
+    <meta property="og:title" content="AI Teaching Assistant | Stop the Silence">
+    <meta property="og:description" content="You explain. They nod. You ask a question — silence. Give them a private AI tutor.">
+    <meta property="og:url" content="https://ndetos.github.io/ai-teaching-assistant/">
+    
+    <!-- ============================================================ -->
+    <!-- SECURITY HEADERS                                               -->
+    <!-- ============================================================ -->
+    <!-- Content Security Policy: Prevents XSS and injection attacks -->
+    <!-- Updated to allow OpenPanel domains -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://openpanel.dev https://cdn.openpanel.dev;
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data:;
+        font-src 'self';
+        connect-src 'self' https://openpanel.dev;
+    ">
+    <!-- Prevent MIME type sniffing -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <!-- Prevent clickjacking -->
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <!-- Control referrer information -->
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <!-- Disable unnecessary browser features -->
+    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
+    <!-- ============================================================ -->
+    
+    <!-- ============================================================ -->
+    <!-- OPENPANEL ANALYTICS                                            -->
+    <!-- ============================================================ -->
+    <script>
+      window.op=window.op||function(){var n=[];return new Proxy(function(){arguments.length&&n.push([].slice.call(arguments))},{get:function(t,r){return"q"===r?n:function(){n.push([r].concat([].slice.call(arguments)))}} ,has:function(t,r){return"q"===r}}) }();
+      window.op('init', {
+        clientId: '0b7e3228-5f83-4275-9402-a45bf29a8725',
+        trackScreenViews: true,
+        trackOutgoingLinks: true,
+        trackAttributes: true,
+        // sessionReplay: {
+        //   enabled: true,
+        // },
+      });
+    </script>
+    <script src="https://openpanel.dev/op1.js" defer async></script>
+    
+    <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #1a1a2e; background: #f8f9fa; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    
+    .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 60px 0 50px; text-align: center; }
+    .header h1 { font-size: 2.8rem; margin-bottom: 20px; font-weight: 700; }
+    .header .subtitle { font-size: 1.2rem; opacity: 0.9; max-width: 700px; margin: 0 auto 25px; }
+    .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; margin-bottom: 20px; }
+    .cta-button { display: inline-block; background: #e94560; color: white; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; margin: 8px; border: none; cursor: pointer; transition: all 0.3s ease; }
+    .cta-button:hover { background: #c62a47; transform: translateY(-2px); }
+    .cta-button-secondary { background: transparent; border: 2px solid white; }
+    
+    .section-title { text-align: center; font-size: 2rem; margin-bottom: 15px; }
+    .section-subtitle { text-align: center; color: #666; margin-bottom: 40px; max-width: 700px; margin-left: auto; margin-right: auto; }
+    
+    .silence-section { background: #1a1a2e; color: white; padding: 60px 0; text-align: center; }
+    .silence-quote { font-size: 1.8rem; font-style: italic; max-width: 800px; margin: 0 auto 30px; line-height: 1.4; }
+    .silence-quote::before { content: "“"; font-size: 4rem; opacity: 0.5; display: block; }
+    .silence-quote::after { content: "”"; font-size: 4rem; opacity: 0.5; display: block; }
+    
+    .workflow { padding: 60px 0; background: white; }
+    .workflow-steps { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 40px; }
+    .workflow-step { background: #f8f9fa; border-radius: 16px; padding: 25px; flex: 1; min-width: 200px; text-align: center; border-top: 4px solid #1a73e8; }
+    .workflow-number { background: #1a73e8; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-weight: bold; font-size: 1.2rem; }
+    .workflow-step h3 { margin-bottom: 10px; }
+    .workflow-step p { color: #666; font-size: 0.9rem; }
+    
+    .benefits { padding: 60px 0; background: #f8f9fa; }
+    .benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
+    .benefit-card { background: white; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .benefit-icon { font-size: 2rem; margin-bottom: 15px; }
+    .benefit-card h3 { margin-bottom: 10px; }
+    .benefit-card p { color: #666; font-size: 0.9rem; }
+    
+    .demo { background: #1a1a2e; color: white; padding: 60px 0; }
+    .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; margin-top: 30px; }
+    .demo-card { background: #16213e; border-radius: 16px; padding: 25px; border: 1px solid #2a3a5e; }
+    .chat-interface { background: white; border-radius: 12px; overflow: hidden; margin-top: 15px; }
+    .chat-header { background: #1a73e8; color: white; padding: 12px; text-align: center; font-size: 0.9rem; }
+    .chat-messages { height: 220px; overflow-y: auto; padding: 12px; background: #f5f5f5; font-size: 0.85rem; }
+    .chat-message { margin-bottom: 10px; display: flex; }
+    .chat-message.user { justify-content: flex-end; }
+    .chat-message.user span { background: #1a73e8; color: white; padding: 6px 12px; border-radius: 18px; max-width: 85%; }
+    .chat-message.bot span { background: #e9ecef; color: #333; padding: 6px 12px; border-radius: 18px; max-width: 85%; }
+    .chat-typing { background: #e9ecef; color: #666; padding: 6px 12px; border-radius: 18px; display: inline-block; font-style: italic; }
+    .chat-input-area { display: flex; padding: 10px; background: white; border-top: 1px solid #e0e0e0; }
+    .chat-input { flex: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 24px; font-size: 0.85rem; }
+    .chat-send { background: #1a73e8; color: white; border: none; border-radius: 24px; padding: 8px 16px; margin-left: 8px; cursor: pointer; }
+    
+    .phone-mockup { background: #111; border-radius: 32px; padding: 12px; max-width: 280px; margin: 0 auto; }
+    .phone-screen { background: white; border-radius: 24px; overflow: hidden; font-size: 0.75rem; }
+    .phone-header { background: #1a73e8; color: white; padding: 8px; text-align: center; font-weight: bold; }
+    .phone-chat { height: 200px; overflow-y: auto; padding: 8px; background: #f5f5f5; }
+    .phone-chat .msg { margin-bottom: 6px; padding: 4px 8px; border-radius: 12px; max-width: 85%; }
+    .phone-chat .student { background: #1a73e8; color: white; margin-left: auto; text-align: right; }
+    .phone-chat .ai { background: #e9ecef; color: #333; }
+    
+    .analytics-preview { background: #0f0f1a; border-radius: 12px; padding: 20px; font-family: monospace; font-size: 0.75rem; }
+    .analytics-table { width: 100%; border-collapse: collapse; color: #ccc; }
+    .analytics-table th, .analytics-table td { padding: 6px; text-align: left; border-bottom: 1px solid #2a3a5e; }
+    .analytics-table th { color: #1a73e8; }
+    .warning { color: #e94560; }
+    
+    .pricing { padding: 60px 0; background: white; }
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; max-width: 900px; margin: 0 auto; }
+    .pricing-card { background: #f8f9fa; padding: 30px; border-radius: 16px; text-align: center; }
+    .pricing-card.featured { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; transform: scale(1.02); }
+    .price { font-size: 2.5rem; font-weight: bold; margin: 15px 0; }
+    .pricing-card ul { list-style: none; margin: 20px 0; text-align: left; }
+    .pricing-card li { margin-bottom: 10px; padding-left: 25px; position: relative; }
+    .pricing-card li:before { content: "✓"; position: absolute; left: 0; color: #e94560; }
+    
+    .contact { background: #1a1a2e; color: white; padding: 50px 0; text-align: center; }
+    .contact-info { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-top: 20px; }
+    .contact-item a { color: #e94560; text-decoration: none; }
+    
+    .teacher-badge { background: #e8f5e9; padding: 40px 0; text-align: center; }
+    .footer { background: #0f0f1a; color: #666; text-align: center; padding: 25px; font-size: 0.8rem; }
+    
+    /* ============================================================ */
+    /* RESPONSIVE DESIGN - IMPROVED FOR MOBILE AND TABLET            */
+    /* ============================================================ */
+    
+    /* Tablets and smaller laptops (max-width: 1024px) */
+    @media (max-width: 1024px) {
+        .header h1 { font-size: 2.4rem; }
+        .silence-quote { font-size: 1.6rem; }
+        .demo-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    /* Mobile devices (max-width: 768px) */
+    @media (max-width: 768px) {
+        .header { padding: 40px 0 30px; }
+        .header h1 { font-size: 1.8rem; }
+        .header .subtitle { font-size: 1rem; }
+        
+        .section-title { font-size: 1.6rem; }
+        
+        .silence-quote { font-size: 1.3rem; }
+        .silence-quote::before, .silence-quote::after { font-size: 2.5rem; }
+        
+        .workflow-steps { flex-direction: column; align-items: center; }
+        .workflow-step { max-width: 100%; width: 100%; }
+        
+        .benefits-grid { grid-template-columns: 1fr; }
+        
+        .demo-grid { grid-template-columns: 1fr; }
+        .demo-card { padding: 20px; }
+        .chat-messages { height: 280px; font-size: 0.9rem; }
+        
+        .phone-mockup { max-width: 100%; }
+        
+        .pricing-grid { grid-template-columns: 1fr; max-width: 400px; }
+        .pricing-card.featured { transform: none; }
+        
+        .contact-info { flex-direction: column; align-items: center; gap: 15px; }
+        
+        .teacher-badge { padding: 30px 0; }
+        .teacher-badge h2 { font-size: 1.4rem; }
+        
+        .footer { font-size: 0.7rem; padding: 20px; }
+    }
+    
+    /* Small phones (max-width: 480px) */
+    @media (max-width: 480px) {
+        .header { padding: 30px 0 20px; }
+        .header h1 { font-size: 1.5rem; }
+        .badge { font-size: 0.65rem; padding: 4px 10px; }
+        
+        .section-title { font-size: 1.3rem; }
+        .section-subtitle { font-size: 0.9rem; }
+        
+        .silence-quote { font-size: 1.1rem; }
+        
+        .cta-button { padding: 10px 20px; font-size: 0.9rem; }
+        
+        .demo-card { padding: 15px; }
+        .chat-messages { height: 250px; font-size: 0.8rem; }
+        .chat-input { font-size: 0.8rem; padding: 6px 10px; }
+        .chat-send { font-size: 0.8rem; padding: 6px 12px; }
+        
+        .pricing-card { padding: 20px; }
+        .price { font-size: 2rem; }
+        
+        .contact { padding: 30px 0; }
+        .contact h2 { font-size: 1.4rem; }
+    }
+    /* Collapsible animation */
+#uninstallDetails {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive for mobile - already in your CSS */
+@media (max-width: 768px) {
+    #uninstallDetails > div {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="badge">🎓 Built by a Lecturer + Kenya-Certified Educator | PhD in CS</div>
+            <h1>You Explain.<br>They Nod.<br>You Ask — Silence.</h1>
+            <p class="subtitle">Give them a private AI tutor. Students who are afraid to speak up can ask anonymously. 24/7. No judgment.</p>
+            <p class="subtitle" style="font-size: 1rem; opacity: 0.8;">Runs on your laptop. No internet needed during class. Answers from YOUR course materials.</p>
+            <div>
+                <button onclick="document.getElementById('pricing').scrollIntoView({behavior: 'smooth'})" class="cta-button">🚀 Get Your AI Tutor</button>
+                <button onclick="document.getElementById('demo').scrollIntoView({behavior: 'smooth'})" class="cta-button cta-button-secondary">▶ Try Live Demo</button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- The Silence -->
+    <section class="silence-section">
+        <div class="container">
+            <div class="silence-quote">
+                I explain a concept carefully. They look like they understand. I ask a simple question —<br>
+                <strong style="color: #e94560;">silence.</strong>
+            </div>
+            <p style="max-width: 600px; margin: 0 auto; font-size: 1rem; opacity: 0.9;">
+                Is it fear? Intimidation? Shyness? Or did they not understand?<br>
+                <strong>With a private AI tutor, every student gets a safe space to ask.</strong>
+            </p>
+        </div>
+    </section>
+    
+    <!-- The 3-Hour Lesson Workflow -->
+    <section class="workflow">
+        <div class="container">
+            <h2 class="section-title">How I Use the AI Tutor in My 3-Hour Class</h2>
+            <div class="workflow-steps">
+                <div class="workflow-step">
+                    <div class="workflow-number">1</div>
+                    <h3>📖 I Teach (2 hours)</h3>
+                    <p>Normal lecture. I explain concepts, show examples, build understanding.</p>
+                </div>
+                <div class="workflow-step">
+                    <div class="workflow-number">2</div>
+                    <h3>🤖 AI Tutor Activates</h3>
+                    <p>I turn on the AI. Students ask anonymously — things they were afraid to say in class.</p>
+                </div>
+                <div class="workflow-step">
+                    <div class="workflow-number">3</div>
+                    <h3>🎯 I Target Weak Spots</h3>
+                    <p>The analytics dashboard shows me what they didn't understand. I address it immediately.</p>
+                </div>
+                <div class="workflow-step">
+                    <div class="workflow-number">4</div>
+                    <h3>🔗 Connect & Deepen</h3>
+                    <p>I connect today's lesson to last week and next week. Make it real. Make it stick.</p>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 30px; font-style: italic; color: #555;">"The AI handles the questions they are afraid to ask. I handle the teaching they came for."</p>
+        </div>
+    </section>
+    
+    <!-- What You Actually Get -->
+    <section class="benefits">
+        <div class="container">
+            <h2 class="section-title">What You Actually Get</h2>
+            <p class="section-subtitle">Not "time saved" —but real peace of mind.</p>
+            <div class="benefits-grid">
+                <div class="benefit-card"><div class="benefit-icon">🤫</div><h3>No More Silence</h3><p>Students who are afraid to speak up can ask the AI privately. No judgment. No embarrassment.</p></div>
+                <div class="benefit-card"><div class="benefit-icon">🎯</div><h3>Targeted Intervention</h3><p>The dashboard shows exactly what they didn't understand. You fix it in real time.</p></div>
+                <div class="benefit-card"><div class="benefit-icon">🔗</div><h3>Deeper Connections</h3><p>Use the last hour to connect today's lesson to past and future. Make learning stick.</p></div>
+                <div class="benefit-card"><div class="benefit-icon">💡</div><h3>Practical & Real</h3><p>Show them why this matters in life. Boosts retention. Boosts motivation.</p></div>
+                <div class="benefit-card"><div class="benefit-icon">😌</div><h3>Less Burnout</h3><p>You can't reach 100 students alone. The AI is your teaching assistant.</p></div>
+                <div class="benefit-card"><div class="benefit-icon">🌟</div><h3>Students Feel Supported</h3><p>They get answers at 2 AM. They know you care, even when you're asleep.</p></div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Who Built This -->
+    <section class="teacher-badge">
+        <div class="container">
+            <span style="background: #2e7d32; color: white; padding: 4px 12px; border-radius: 50px; font-size: 0.8rem;">👨‍🏫 Built by a Trained Teacher</span>
+            <h2 style="margin-top: 20px;">I Understand Your Classroom</h2>
+            <p style="max-width: 700px; margin: 15px auto;">I am a <strong>B.Ed graduate</strong> (registered with the Teachers Service Commission in Kenya) with an earned <strong>PhD in Computer Science</strong>. I have stood where you stand — I know the silence, the fear, the exhaustion of large classes.</p>
+            <p>I built this AI Teaching Assistant <em>for myself</em>. Now I offer it to you.</p>
+        </div>
+    </section>
+    
+    <!-- Interactive Demo with Enhanced AI -->
+    <section id="demo" class="demo">
+        <div class="container">
+            <h2 class="section-title" style="color: white;">See It In Action</h2>
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <h3>🤖 Try the AI Tutor</h3>
+                    <p style="font-size: 0.85rem;">Ask about the product, silence, workflow, pricing — I will respond.</p>
+                    <div class="chat-interface">
+                        <div class="chat-header">AI Teaching Assistant (Live Demo)</div>
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="chat-message bot"><span>👋 Hello! I am the AI Teaching Assistant demo. Ask me anything: "How does this help quiet students?", "What is the 3-hour workflow?", "How much does it cost?" — I will answer. If I cannot answer, I will direct you to Dr. Wandeto.</span></div>
+                        </div>
+                        <div class="chat-input-area">
+                            <input type="text" id="chatInput" class="chat-input" placeholder="Type your question...">
+                            <button class="chat-send" onclick="sendMessage()">Send</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="demo-card">
+                    <h3>📱 What Students See</h3>
+                    <div class="phone-mockup">
+                        <div class="phone-screen">
+                            <div class="phone-header">Private AI Tutor</div>
+                            <div class="phone-chat" id="phoneChat">
+                                <div class="msg ai">Hello! I'm your private tutor. Ask me anything — no one will know.</div>
+                                <div class="msg student">I didn't understand the M/M/1 queue...</div>
+                                <div class="msg ai">No problem. Let me explain it differently. The M/M/1 queue is like a single checkout counter at a supermarket...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.7rem; color: #888; margin-top: 10px;">Students ask anonymously — no fear of looking "weak" in front of 100 peers.</p>
+                </div>
+                
+                <div class="demo-card">
+                    <h3>📊 Analytics Dashboard</h3>
+                    <div class="analytics-preview">
+                        <table class="analytics-table">
+                            <tr><th>Topic</th><th>Questions</th><th>Students Struggling</th></tr>
+                            <tr><td>M/M/1 Queue</td><td>45</td><td class="warning">12 students — intervene</td></tr>
+                            <tr><td>Random Number Generation</td><td>23</td><td>3 students</td></tr>
+                            <tr><td>Monte Carlo Method</td><td>18</td><td>2 students</td></tr>
+                        </table>
+                        <p style="color: #e94560; font-size: 0.7rem; margin-top: 10px;">⚠️ 12 students didn't understand M/M/1. Address it in the last hour.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+<!-- One-Command Installer & Uninstaller -->
+<section id="installer" style="background: #f0f4ff; padding: 60px 0;">
+    <div class="container">
+        <h2 class="section-title">🚀 One Command to Install</h2>
+        <p class="section-subtitle">Copy and paste this command into your terminal. Everything else is automatic.</p>
+        
+        <!-- INSTALL COMMAND -->
+        <div style="background: #1a1a2e; border-radius: 16px; padding: 30px; max-width: 800px; margin: 30px auto; text-align: center;">
+            <code style="color: #00ff88; font-size: 1.1rem; word-break: break-all; background: transparent; display: block; padding: 15px;">
+                curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/install.sh | bash
+            </code>
+            <button onclick="copyInstallCommand()" style="margin-top: 15px; background: #e94560; color: white; padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer;">
+                📋 Copy Command
+            </button>
+            <div id="copyInstallFeedback" style="display: none; margin-top: 10px; color: #00ff88; font-size: 0.9rem;">
+                ✅ Copied! Paste it in your terminal.
+            </div>
+        </div>
+        
+<!-- ============================================================ -->
+<!-- UNINSTALL SECTION - COLLAPSIBLE                                -->
+<!-- ============================================================ -->
+<div style="margin-top: 50px; border-top: 2px solid #ddd; padding-top: 40px;">
+    <h2 class="section-title" style="font-size: 1.6rem;">🗑️ One Command to Uninstall</h2>
+    <p class="section-subtitle">
+        Remove everything — including the AI model and container images. 
+        <a href="javascript:void(0)" onclick="toggleUninstall()" style="color: #e94560; text-decoration: none; font-weight: 600;">
+            See more <span id="toggleIcon">▼</span>
+        </a>
+    </p>
+    
+    <!-- Collapsible Details -->
+    <div id="uninstallDetails" style="display: none; max-width: 900px; margin: 20px auto;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+            
+            <!-- Linux/macOS/WSL Uninstall -->
+            <div style="background: #1a1a2e; border-radius: 16px; padding: 25px; text-align: center;">
+                <div style="color: #ff6b6b; font-size: 2rem; margin-bottom: 10px;">🐧</div>
+                <h4 style="color: white; margin-bottom: 10px;">Linux / macOS / WSL</h4>
+                <code style="color: #ff6b6b; font-size: 0.8rem; word-break: break-all; background: #2a2a4a; display: block; padding: 12px; border-radius: 8px; text-align: left;">
+                    curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/uninstall.sh | bash
+                </code>
+                <button onclick="copyUninstallCommand('unix')" style="margin-top: 12px; background: #dc3545; color: white; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                    📋 Copy
+                </button>
+                <div id="copyUninstallUnixFeedback" style="display: none; margin-top: 8px; color: #00ff88; font-size: 0.8rem;">
+                    ✅ Copied!
+                </div>
+                <p style="color: #888; font-size: 0.7rem; margin-top: 10px;">
+                    ⚠️ Will ask if you want to remove Docker too
+                </p>
+            </div>
+            
+            <!-- Windows Uninstall -->
+            <div style="background: #1a1a2e; border-radius: 16px; padding: 25px; text-align: center;">
+                <div style="color: #ff6b6b; font-size: 2rem; margin-bottom: 10px;">🪟</div>
+                <h4 style="color: white; margin-bottom: 10px;">Windows (CMD / PowerShell)</h4>
+                <code style="color: #ff6b6b; font-size: 0.8rem; word-break: break-all; background: #2a2a4a; display: block; padding: 12px; border-radius: 8px; text-align: left;">
+                    curl.exe -fsSL -o uninstall.bat https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/uninstall.bat &amp;&amp; uninstall.bat
+                </code>
+                <button onclick="copyUninstallCommand('windows')" style="margin-top: 12px; background: #dc3545; color: white; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                    📋 Copy
+                </button>
+                <div id="copyUninstallWindowsFeedback" style="display: none; margin-top: 8px; color: #00ff88; font-size: 0.8rem;">
+                    ✅ Copied!
+                </div>
+                <p style="color: #888; font-size: 0.7rem; margin-top: 10px;">
+                    ⚠️ Will ask if you want to remove Docker too
+                </p>
+            </div>
+        </div>
+        
+        <div style="max-width: 700px; margin: 20px auto; text-align: center; background: #f8f9fa; padding: 15px; border-radius: 8px;">
+            <p style="font-size: 0.85rem; color: #555;">
+                <strong>📋 What gets removed:</strong> Containers, Docker images, volumes, networks, and all AI Tutor files.
+                <br>Docker itself is kept unless you choose to remove it during uninstall.
+            </p>
+            <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">
+                💡 Need help? Contact: <a href="mailto:john.wandeto@dkut.ac.ke" style="color: #1a73e8;">john.wandeto@dkut.ac.ke</a>
+            </p>
+        </div>
+    </div>
+</div>
+        
+        <!-- Installation instructions -->
+        <div style="max-width: 700px; margin: 30px auto; text-align: left; background: #f8f9fa; padding: 25px; border-radius: 12px;">
+            <h4 style="margin-bottom: 15px;">💻 How to run the command:</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #2e7d32;">
+                    <strong>🐧 Linux</strong>
+                    <ol style="margin: 8px 0 0 20px; font-size: 0.85rem; color: #333;">
+                        <li>Open Terminal (<code>Ctrl+Alt+T</code>)</li>
+                        <li>Paste the command and press Enter</li>
+                    </ol>
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #1a73e8;">
+                    <strong>🍎 macOS</strong>
+                    <ol style="margin: 8px 0 0 20px; font-size: 0.85rem; color: #333;">
+                        <li>Open Terminal from Launchpad</li>
+                        <li>Paste the command and press Enter</li>
+                    </ol>
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #e94560; grid-column: 1 / -1;">
+                    <strong>🪟 Windows</strong>
+                    <ol style="margin: 8px 0 0 20px; font-size: 0.85rem; color: #333;">
+                        <li>Press <code>Win + R</code>, type <code>cmd</code>, and press Enter</li>
+                        <li>Right-click in the black window and select "Paste"</li>
+                        <li>Press Enter to run the command</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        
+        <div style="max-width: 700px; margin: 0 auto; font-size: 0.9rem; color: #555; text-align: left;">
+            <p><strong>⚠️ Requirements:</strong></p>
+            <ul style="list-style: none; padding: 0;">
+                <li style="margin-bottom: 8px; padding-left: 25px; position: relative;">💻 <strong>8GB RAM</strong> (16GB recommended)</li>
+                <li style="margin-bottom: 8px; padding-left: 25px; position: relative;">📦 <strong>15GB free disk space</strong> (for the AI model)</li>
+            </ul>
+            <p style="margin-top: 15px; font-size: 0.8rem; color: #888;">
+                📜 Licensed under <a href="https://www.gnu.org/licenses/agpl-3.0.en.html" target="_blank">AGPL-3.0</a>
+            </p>
+        </div>
+    </div>
+</section>
+    
+    <!-- ============================================================ -->
+<!-- FAQ                            -->
+<!-- ============================================================ -->
+<section style="background: #f8f9fa; padding: 60px 0;">
+    <div class="container">
+        <h2 class="section-title">Quick Questions</h2>
+        <div style="max-width: 700px; margin: 0 auto;">
+            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h4 style="color: #1a1a2e;">What equipment do I need?</h4>
+                <p style="color: #555; font-size: 0.9rem;">Any laptop with 8GB RAM (16GB recommended) and 15GB free disk space. Windows, macOS, or Linux.</p>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h4 style="color: #1a1a2e;">Does it work without internet?</h4>
+                <p style="color: #555; font-size: 0.9rem;">Yes. Once installed, it runs entirely on your laptop. Students connect via classroom Wi-Fi (no internet needed).</p>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h4 style="color: #1a1a2e;">Is student data private?</h4>
+                <p style="color: #555; font-size: 0.9rem;">100%. Everything runs locally on your laptop. No cloud. No third-party servers. Your data never leaves your control.</p>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h4 style="color: #1a1a2e;">How long does installation take?</h4>
+                <p style="color: #555; font-size: 0.9rem;">3-15 minutes. One command. The script handles everything automatically.</p>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h4 style="color: #1a1a2e;">What if I get stuck?</h4>
+                <p style="color: #555; font-size: 0.9rem;">Contact App creator directly: 📧 <a href="mailto:john.wandeto@dkut.ac.ke" style="color: #1a73e8;">john.wandeto@dkut.ac.ke</a> | 📱 <a href="https://wa.me/254783808800" style="color: #25D366;">WhatsApp</a>. I respond within a few hours.</p>
+            </div>
+        </div>
+    </div>
+</section>
+ <!-- ============================================================ -->
+<!-- CONTACT SECTION WITH TALLY FORM (NO IFRAME)                   -->
+<!-- ============================================================ -->
+<section id="contact" class="contact" style="background: #1a1a2e; padding: 80px 0;">
+    <div class="container" style="max-width: 900px; margin: 0 auto; padding: 0 20px;">
+        
+        <!-- Section Header -->
+        <div style="text-align: center; margin-bottom: 50px;">
+            <h2 style="color: white; font-size: 2.2rem; margin-bottom: 15px; font-weight: 700;">
+                Ready to Break the Silence?
+            </h2>
+            <p style="color: rgba(255,255,255,0.7); font-size: 1.1rem; max-width: 500px; margin: 0 auto;">
+                I would love to hear from you. Send me a message and I will get back to you within 24 hours.
+            </p>
+        </div>
+
+        <!-- Contact Card -->
+        <div style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            max-width: 700px;
+            margin: 0 auto;
+        ">
+            <!-- Left: Contact Form Button -->
+            <div style="
+                background: white; 
+                border-radius: 20px; 
+                padding: 40px 30px; 
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                text-align: center;
+                transition: transform 0.3s ease;
+            "
+            onmouseover="this.style.transform='translateY(-5px)'"
+            onmouseout="this.style.transform='translateY(0)'">
+                <div style="font-size: 3rem; margin-bottom: 20px;">📝</div>
+                <h3 style="color: #1a1a2e; font-size: 1.3rem; margin-bottom: 10px;">Send a message</h3>
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">
+                    Fill out the secure form and I will respond within 24 hours.
+                </p>
+                <a href="https://tally.so/r/xX1D4o" 
+                   target="_blank" 
+                   style="
+                       display: inline-block;
+                       background: #1a73e8;
+                       color: white;
+                       padding: 14px 32px;
+                       border-radius: 50px;
+                       text-decoration: none;
+                       font-weight: 600;
+                       font-size: 1rem;
+                       transition: all 0.3s ease;
+                   "
+                   onmouseover="this.style.background='#1557b0'"
+                   onmouseout="this.style.background='#1a73e8'">
+                    📝 Open Contact Form
+                </a>
+            </div>
+
+            <!-- Right: WhatsApp -->
+            <div style="
+                background: white; 
+                border-radius: 20px; 
+                padding: 40px 30px; 
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                text-align: center;
+                transition: transform 0.3s ease;
+            "
+            onmouseover="this.style.transform='translateY(-5px)'"
+            onmouseout="this.style.transform='translateY(0)'">
+                <div style="font-size: 3rem; margin-bottom: 20px;">📱</div>
+                <h3 style="color: #1a1a2e; font-size: 1.3rem; margin-bottom: 10px;">WhatsApp</h3>
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">
+                    Chat with me directly on WhatsApp for quick questions.
+                </p>
+                <a href="https://wa.me/254783808800" 
+                   target="_blank" 
+                   style="
+                       display: inline-block;
+                       background: #25D366;
+                       color: white;
+                       padding: 14px 32px;
+                       border-radius: 50px;
+                       text-decoration: none;
+                       font-weight: 600;
+                       font-size: 1rem;
+                       transition: all 0.3s ease;
+                   "
+                   onmouseover="this.style.background='#1ebe5c'"
+                   onmouseout="this.style.background='#25D366'">
+                    💬 Chat on WhatsApp
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer Note -->
+        <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <p style="color: rgba(255,255,255,0.4); font-size: 0.8rem;">
+                🔒 Your message is private and secure. I typically respond within 24 hours.
+            </p>
+        </div>
+
+    </div>
+</section>
+    
+    <footer class="footer">
+        <div class="container">
+            <p>© 2026 AI Teaching Assistant. Built by a lecturer, trained teacher, and AI Solutions Engineer.</p>
+            <p>All systems run locally on your hardware. Your data never leaves your control.</p>
+        </div>
+    </footer>
+
+    <script>
+        // ============================================================
+        // ENHANCED AI-LIKE CHAT WITH CONTEXT MEMORY & FALLBACK TO CONTACT
+        // ============================================================
+        
+        let conversationHistory = [];
+        
+        const knowledgeBase = {
+            silence: {
+                keywords: ["silence", "quiet", "shy", "afraid", "intimidated", "nod", "fear", "speak up", "silent", "embarrassed"],
+                response: "That silence you hear after asking a question? It is often not lack of understanding — it is fear. Fear of looking 'weak' in front of 100 peers. Fear of being wrong. Fear of judgment. The AI tutor eliminates that fear completely. Students ask anonymously. You see the patterns on your dashboard. You address the gaps without embarrassing anyone. The silence becomes dialogue — just through a private channel.",
+                followUp: ["How do students ask anonymously?", "Can I see who asked what?", "What if they ask something inappropriate?"]
+            },
+            workflow: {
+                keywords: ["3-hour", "workflow", "class structure", "how do you use it", "lesson plan", "teach", "3 hour", "three hour", "schedule"],
+                response: "Here is my actual 3-hour class workflow: (1) I teach normally for 2 hours — concepts, examples, building understanding. (2) I turn on the AI tutor for the final hour. Students ask anonymously — things they were afraid to say in class. (3) The dashboard shows me exactly what they didn't understand. (4) I address those gaps immediately, then connect today's lesson to last week and next week. The result? Deeper understanding. Less silence. Students leave feeling supported.",
+                followUp: ["What does the dashboard show you?", "How do students ask anonymously?", "Does this work for online classes?"]
+            },
+            dashboard: {
+                keywords: ["dashboard", "analytics", "see who", "struggling", "identify", "track", "analytics", "report"],
+                response: "The analytics dashboard shows you aggregated patterns — not individual names (unless you want that). For example: '45 questions about M/M/1 queue' tells you that approximately 12-15 students struggled. You can then re-teach that concept in the last hour. You can also see which students ask zero questions (possible disengagement) and which ask many (possible struggle or high engagement). Early intervention becomes possible.",
+                followUp: ["Can I export the data?", "Does it track attendance too?", "Is student data private?"]
+            },
+            product: {
+                keywords: ["product", "what is this", "ai tutor", "teaching assistant", "what does it do", "explain", "overview"],
+                response: "The AI Teaching Assistant is a private tutor that runs on YOUR laptop. Students connect via browser and ask questions. The AI answers using YOUR course materials — not generic internet content. It works offline, requires no internet during class, and gives shy students a safe space to ask. Your data never leaves your control.",
+                followUp: ["How does it handle large classes?", "What makes it different from ChatGPT?", "Does it really work offline?"]
+            },
+            tech: {
+                keywords: ["how does it work", "technology", "runs on", "installation", "setup", "internet", "offline", "wifi"],
+                response: "The AI runs entirely on your laptop. No cloud. No API keys. No monthly fees. Students connect via your classroom Wi-Fi (no internet needed). I install everything remotely in about 1 hour. You provide your course materials organized by week. The AI indexes them and is ready to answer. Your data never leaves your control.",
+                followUp: ["What if I have no Wi-Fi in class?", "Does it work on my old laptop?", "What operating systems work?"]
+            },
+            price: {
+                keywords: ["price", "cost", "ksh", "fee", "pay", "how much", "pricing", "expensive", "cheap"],
+                response: "Introductory price: KSh 5,000 for the first 20 lecturers. Regular price: KSh 15,000. One-time payment. No monthly fees. No hidden costs. This includes full setup on your laptop, your course materials indexed, 1-hour training, and 30 days WhatsApp support.",
+                followUp: ["What about multiple courses?", "Do you offer department licenses?", "Is there a money-back guarantee?"]
+            },
+            contact: {
+                keywords: ["contact", "email", "whatsapp", "reach", "call", "message", "phone"],
+                response: "You can reach me directly: 📧 john.wandeto@dkut.ac.ke | 📱 WhatsApp: +254 783 808 800. I typically respond within a few hours. Or use the buttons below to copy my email or open your email client.",
+                followUp: ["Do you offer live demos?", "Can I see it working with my materials first?", "How soon can you set it up?"]
+            },
+            demo: {
+                keywords: ["demo", "live", "see it", "test", "try", "sample", "example"],
+                response: "You are using a simulation right now! For a live demo with YOUR actual course materials, contact me directly. I will schedule a 30-minute session where I set up a temporary instance tailored to your course. You will see it answer questions from your own notes.",
+                followUp: ["Is the live demo free?", "How long does it take to set up?", "What do I need to prepare?"]
+            }
+        };
+        
+        function findTopic(question) {
+            let q = question.toLowerCase();
+            let bestMatch = null;
+            let bestScore = 0;
+            
+            for (let [topic, data] of Object.entries(knowledgeBase)) {
+                let score = data.keywords.filter(keyword => q.includes(keyword)).length;
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMatch = topic;
+                }
+            }
+            
+            return bestMatch;
+        }
+        
+        function getAIResponse(question) {
+            let topic = findTopic(question);
+            
+            if (!topic) {
+                return "I appreciate your question, but I am a demo focused specifically on the AI Teaching Assistant product. For the most accurate answer, please reach out directly:\n\n📧 **Email:** john.wandeto@dkut.ac.ke\n📱 **WhatsApp:** +254 783 808 800\n\nDr. Wandeto responds within a few hours and would be happy to help with your specific question.";
+            }
+            
+            let data = knowledgeBase[topic];
+            let response = data.response;
+            
+            conversationHistory.push({ role: "user", content: question, topic: topic });
+            if (conversationHistory.length > 6) conversationHistory.shift();
+            
+            if (data.followUp && data.followUp.length > 0) {
+                let randomFollowUp = data.followUp[Math.floor(Math.random() * data.followUp.length)];
+                response += "\n\n💡 You might also want to ask: \"" + randomFollowUp + "\"";
+            }
+            
+            if (conversationHistory.length > 1) {
+                let lastTopic = conversationHistory[conversationHistory.length - 2]?.topic;
+                if (lastTopic && lastTopic !== topic) {
+                    response = "Great question — let me shift gears. " + response;
+                }
+            }
+            
+            return response;
+        }
+        
+        function sendMessage() {
+            let input = document.getElementById('chatInput');
+            let question = input.value.trim();
+            if (!question) return;
+            
+            let messagesDiv = document.getElementById('chatMessages');
+            
+            messagesDiv.innerHTML += `<div class="chat-message user"><span>${escapeHtml(question)}</span></div>`;
+            input.value = '';
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            messagesDiv.innerHTML += `<div class="chat-message bot"><span class="chat-typing">🤖 Thinking...</span></div>`;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            setTimeout(() => {
+                messagesDiv.removeChild(messagesDiv.lastChild);
+                let answer = getAIResponse(question);
+                messagesDiv.innerHTML += `<div class="chat-message bot"><span>🤖 ${escapeHtml(answer)}</span></div>`;
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 600);
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            let div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        document.getElementById('chatInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+        
+        // ============================================================
+        // CONFIGURATION - Update these values when needed
+        // ============================================================
+        const REPO_CONFIG = {
+            user: 'ndetos',
+            repo: 'ai-teaching-assistant',
+            branch: 'master'
+        };
+
+        function getInstallCommand() {
+            return `curl -fsSL https://raw.githubusercontent.com/${REPO_CONFIG.user}/${REPO_CONFIG.repo}/${REPO_CONFIG.branch}/install.sh | bash`;
+        }
+
+        function getUninstallCommandUnix() {
+            return `curl -fsSL https://raw.githubusercontent.com/${REPO_CONFIG.user}/${REPO_CONFIG.repo}/${REPO_CONFIG.branch}/uninstall.sh | bash`;
+        }
+
+        function getUninstallCommandWindows() {
+            return `curl.exe -fsSL -o uninstall.bat https://raw.githubusercontent.com/${REPO_CONFIG.user}/${REPO_CONFIG.repo}/${REPO_CONFIG.branch}/uninstall.bat && uninstall.bat`;
+        }
+
+        // ============================================================
+        // COPY FUNCTIONS
+        // ============================================================
+
+        function copyInstallCommand() {
+            const cmd = getInstallCommand();
+            
+            if (typeof op !== 'undefined') {
+                op('track', 'copy_install_command', {
+                    'button': 'copy_install',
+                    'location': 'landing_page'
+                });
+            }
+            
+            copyToClipboard(cmd, 'copyInstallFeedback');
+        }
+
+        function copyUninstallCommand(os) {
+            let cmd = '';
+            let feedbackId = '';
+            
+            if (os === 'unix') {
+                cmd = getUninstallCommandUnix();
+                feedbackId = 'copyUninstallUnixFeedback';
+                
+                if (typeof op !== 'undefined') {
+                    op('track', 'copy_uninstall_unix', {
+                        'os': 'unix',
+                        'location': 'landing_page'
+                    });
+                }
+            } else if (os === 'windows') {
+                cmd = getUninstallCommandWindows();
+                feedbackId = 'copyUninstallWindowsFeedback';
+                
+                if (typeof op !== 'undefined') {
+                    op('track', 'copy_uninstall_windows', {
+                        'os': 'windows',
+                        'location': 'landing_page'
+                    });
+                }
+            }
+            
+            copyToClipboard(cmd, feedbackId);
+        }
+
+        function copyToClipboard(text, feedbackId) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text)
+                    .then(() => showFeedback(feedbackId))
+                    .catch(() => fallbackCopyToClipboard(text, feedbackId));
+            } else {
+                fallbackCopyToClipboard(text, feedbackId);
+            }
+        }
+
+        function fallbackCopyToClipboard(text, feedbackId) {
+            const input = document.createElement('input');
+            input.value = text;
+            document.body.appendChild(input);
+            input.select();
+            try {
+                document.execCommand('copy');
+                showFeedback(feedbackId);
+            } catch (err) {
+                alert('Please copy the command manually:\n\n' + text);
+            }
+            document.body.removeChild(input);
+        }
+
+        function showFeedback(feedbackId) {
+            const feedback = document.getElementById(feedbackId);
+            if (feedback) {
+                feedback.style.display = 'block';
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                }, 3000);
+            }
+        }
+        // ============================================================
+// TOGGLE UNINSTALL DETAILS
+// ============================================================
+function toggleUninstall() {
+    const details = document.getElementById('uninstallDetails');
+    const icon = document.getElementById('toggleIcon');
+    
+    if (details.style.display === 'none' || details.style.display === '') {
+        details.style.display = 'block';
+        icon.textContent = '▲';
+        // Track the expand event in OpenPanel
+        if (typeof op !== 'undefined') {
+            op('track', 'uninstall_details_expanded', {
+                'location': 'landing_page'
+            });
+        }
+    } else {
+        details.style.display = 'none';
+        icon.textContent = '▼';
+    }
+}
+
+// Handle window resize for responsive behavior
+window.addEventListener('resize', function() {
+    // On small screens, the grid becomes 1 column automatically via CSS
+    // This just ensures the toggle stays functional
+});
+    </script>
+</body>
+</html>
