@@ -186,7 +186,7 @@ export COURSE_NAME
 export INSTRUCTOR_NAME
 export INSTITUTION_NAME
 
-python3 << EOF
+python3 << 'EOF'
 import re
 import os
 
