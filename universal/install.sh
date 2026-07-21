@@ -248,11 +248,18 @@ print("✅ Customized ndetos_sim.py created")
 EOF
 
 # ============================================================
-# STEP 6: Index Course Materials
+# STEP 6: Index Course Materials (INSIDE DOCKER)
 # ============================================================
 print_status "🔍 Indexing your course materials (this may take a few minutes)..."
 
-python3 index_course.py ~/ai-tutor/course-materials/ -o ~/ai-tutor/knowledge_base.pkl
+# First, copy the index_course.py to the Docker container
+docker cp index_course.py ai-tutor:/app/
+
+# Run the indexing inside the container
+docker exec ai-tutor python3 /app/index_course.py /app/course-materials/ -o /app/knowledge_base.pkl
+
+# Copy the generated knowledge base back to the host
+docker cp ai-tutor:/app/knowledge_base.pkl ~/ai-tutor/knowledge_base.pkl
 
 print_success "✅ Course indexed successfully!"
 
