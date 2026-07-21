@@ -248,9 +248,42 @@ print("✅ Customized ndetos_sim.py created")
 EOF
 
 # ============================================================
-# STEP 6: Index Course Materials (INSIDE DOCKER)
+# STEP 6: Get Host IP
+# ============================================================
+if [[ "$OS_TYPE" == "Windows" ]]; then
+    HOST_IP=$(powershell.exe -Command "Get-NetIPAddress -AddressFamily IPv4 | Where-Object {\$_.IPAddress -notmatch '^127\.'} | Select-Object -First 1 | ForEach-Object {\$_.IPAddress}" 2>/dev/null | tr -d '\r\n')
+    [ -z "$HOST_IP" ] && HOST_IP=$(ipconfig | grep -i "IPv4" | grep -v "127.0.0.1" | head -1 | awk -F: '{print $2}' | xargs)
+else
+    HOST_IP=$(ip -4 addr show 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^127\.' | head -1)
+    [ -z "$HOST_IP" ] && HOST_IP=$(ifconfig 2>/dev/null | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
+fi
+[ -z "$HOST_IP" ] && HOST_IP="localhost"
+
+export STUDENT_URL="http://$HOST_IP:5004"
+
+# ============================================================
+# STEP 7: Start Docker Containers
+# ============================================================
+print_status "🚀 Starting your personalized AI Tutor..."
+
+# Run docker compose up with visible output
+docker compose up -d
+
+# Check if it succeeded
+if [ $? -eq 0 ]; then
+    print_success "✅ Containers started successfully"
+else
+    print_error "❌ Failed to start containers"
+    exit 1
+fi
+
+# ============================================================
+# STEP 8: Index Course Materials (INSIDE DOCKER - NOW CONTAINER EXISTS)
 # ============================================================
 print_status "🔍 Indexing your course materials (this may take a few minutes)..."
+
+# Wait for container to be fully ready
+sleep 5
 
 # Create the course materials directory in the container
 docker exec ai-tutor mkdir -p /app/course-materials
@@ -268,53 +301,6 @@ docker exec ai-tutor python3 /app/index_course.py /app/course-materials/ -o /app
 docker cp ai-tutor:/app/knowledge_base.pkl ~/ai-tutor/knowledge_base.pkl
 
 print_success "✅ Course indexed successfully!"
-
-# ============================================================
-# STEP 7: Get Host IP
-# ============================================================
-if [[ "$OS_TYPE" == "Windows" ]]; then
-    HOST_IP=$(powershell.exe -Command "Get-NetIPAddress -AddressFamily IPv4 | Where-Object {\$_.IPAddress -notmatch '^127\.'} | Select-Object -First 1 | ForEach-Object {\$_.IPAddress}" 2>/dev/null | tr -d '\r\n')
-    [ -z "$HOST_IP" ] && HOST_IP=$(ipconfig | grep -i "IPv4" | grep -v "127.0.0.1" | head -1 | awk -F: '{print $2}' | xargs)
-else
-    HOST_IP=$(ip -4 addr show 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^127\.' | head -1)
-    [ -z "$HOST_IP" ] && HOST_IP=$(ifconfig 2>/dev/null | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
-fi
-[ -z "$HOST_IP" ] && HOST_IP="localhost"
-
-export STUDENT_URL="http://$HOST_IP:5004"
-
-# ============================================================
-# STEP 8: Start Docker Containers
-# ============================================================
-print_status "🚀 Starting your personalized AI Tutor..."
-
-start_time=$(date +%s)
-
-# Run docker compose up, redirect ALL output (stdout and stderr) to /dev/null
-docker compose up -d > /dev/null 2>&1 &
-pid=$!
-
-# Show elapsed time while waiting
-while kill -0 $pid 2>/dev/null; do
-    current_time=$(date +%s)
-    elapsed=$((current_time - start_time))
-    printf "\r   ⏳ %d seconds elapsed... " "$elapsed"
-    sleep 1
-done
-
-wait $pid 2>/dev/null
-exit_code=$?
-
-printf "\r   "
-if [ $exit_code -eq 0 ]; then
-    current_time=$(date +%s)
-    elapsed=$((current_time - start_time))
-    printf "✅ Containers started in %d seconds   \n" "$elapsed"
-else
-    printf "❌ Failed to start containers. Showing error:\n"
-    docker compose up -d
-    exit $exit_code
-fi
 
 # ============================================================
 # STEP 9: Pull AI Model
@@ -386,7 +372,7 @@ echo "✅ Installation Complete!"
 echo "=========================================="
 echo ""
 echo "📚 Course: $COURSE_CODE - $COURSE_NAME"
-echo "👨‍🏫 Instructor: $INSTRUCTOR_NAME"
+echo "👨🏫 Instructor: $INSTRUCTOR_NAME"
 echo "🏛️  Institution: $INSTITUTION_NAME"
 echo ""
 echo "📚 Students connect to: $STUDENT_URL"
