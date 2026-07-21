@@ -140,13 +140,13 @@ cd "$AI_DIR"
 print_status "Downloading AI Tutor configuration..."
 
 # Download docker-compose.yml
-curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/docker-compose.yml -o docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/docker-compose.yml -o docker-compose.yml
 
 # Download index_course.py
-curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/index_course.py -o index_course.py
+curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/index_course.py -o index_course.py
 
 # Download ndetos_sim_template.py
-curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/ndetos_sim_template.py -o ndetos_sim_template.py
+curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/ndetos_sim_template.py -o ndetos_sim_template.py
 
 # ============================================================
 # STEP 4: Course Customization
