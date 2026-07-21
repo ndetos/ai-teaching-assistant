@@ -252,7 +252,13 @@ EOF
 # ============================================================
 print_status "🔍 Indexing your course materials (this may take a few minutes)..."
 
-# First, copy the index_course.py to the Docker container
+# Create the course materials directory in the container
+docker exec ai-tutor mkdir -p /app/course-materials
+
+# Copy course materials from host to container
+docker cp ~/ai-tutor/course-materials/. ai-tutor:/app/course-materials/
+
+# Copy the index_course.py script to the container
 docker cp index_course.py ai-tutor:/app/
 
 # Run the indexing inside the container
