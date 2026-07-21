@@ -278,27 +278,30 @@ else
 fi
 
 # ============================================================
-# STEP 8: Index Course Materials (INSIDE DOCKER - NOW CONTAINER EXISTS)
+# STEP 8: Index Course Materials (INSIDE DOCKER)
 # ============================================================
 print_status "🔍 Indexing your course materials (this may take a few minutes)..."
 
 # Wait for container to be fully ready
 sleep 5
 
-# Create the course materials directory in the container
-docker exec ai-tutor mkdir -p /app/course-materials
+# Create a writable temp directory in the container
+docker exec ai-tutor mkdir -p /tmp/indexing
 
-# Copy course materials from host to container
-docker cp ~/ai-tutor/course-materials/. ai-tutor:/app/course-materials/
+# Copy course materials from host to container's temp dir
+docker cp ~/ai-tutor/course-materials/. ai-tutor:/tmp/indexing/course-materials/
 
 # Copy the index_course.py script to the container
-docker cp index_course.py ai-tutor:/app/
+docker cp index_course.py ai-tutor:/tmp/indexing/
 
-# Run the indexing inside the container
-docker exec ai-tutor python3 /app/index_course.py /app/course-materials/ -o /app/knowledge_base.pkl
+# Run the indexing inside the container (using writable temp dir)
+docker exec ai-tutor python3 /tmp/indexing/index_course.py /tmp/indexing/course-materials/ -o /tmp/indexing/knowledge_base.pkl
 
 # Copy the generated knowledge base back to the host
-docker cp ai-tutor:/app/knowledge_base.pkl ~/ai-tutor/knowledge_base.pkl
+docker cp ai-tutor:/tmp/indexing/knowledge_base.pkl ~/ai-tutor/knowledge_base.pkl
+
+# Clean up temp files in container
+docker exec ai-tutor rm -rf /tmp/indexing
 
 print_success "✅ Course indexed successfully!"
 
