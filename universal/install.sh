@@ -180,8 +180,21 @@ read -p "Press Enter when you have copied your materials..."
 # ============================================================
 print_status "🔧 Creating your personalized AI Tutor..."
 
+# Export variables so Python can access them
+export COURSE_CODE
+export COURSE_NAME
+export INSTRUCTOR_NAME
+export INSTITUTION_NAME
+
 python3 << EOF
 import re
+import os
+
+# Get variables from environment
+course_code = os.environ.get('COURSE_CODE', '')
+course_name = os.environ.get('COURSE_NAME', '')
+instructor_name = os.environ.get('INSTRUCTOR_NAME', '')
+institution_name = os.environ.get('INSTITUTION_NAME', '')
 
 with open('ndetos_sim_template.py', 'r') as f:
     content = f.read()
@@ -191,18 +204,18 @@ content = re.sub(
     r'COURSE_CONFIG = \{.*?\}',
     f'''COURSE_CONFIG = {{
     "tutor_name": "ndetos",
-    "tutor_full_name": "AI Tutor by {INSTRUCTOR_NAME}",
-    "course_code": "{COURSE_CODE}",
-    "course_name": "{COURSE_NAME}",
-    "instructor": "{INSTRUCTOR_NAME}",
-    "institution": "{INSTITUTION_NAME}",
-    "greeting": "Welcome to {COURSE_CODE} {COURSE_NAME}! I am ndetos, your AI tutor.",
-    "system_prompt": \"\"\"You are ndetos, the AI tutor for {COURSE_CODE} {COURSE_NAME} at {INSTITUTION_NAME}, created by {INSTRUCTOR_NAME}.
+    "tutor_full_name": "AI Tutor by {instructor_name}",
+    "course_code": "{course_code}",
+    "course_name": "{course_name}",
+    "instructor": "{instructor_name}",
+    "institution": "{institution_name}",
+    "greeting": "Welcome to {course_code} {course_name}! I am ndetos, your AI tutor.",
+    "system_prompt": \"\"\"You are ndetos, the AI tutor for {course_code} {course_name} at {institution_name}, created by {instructor_name}.
 
 **CRITICAL INSTRUCTION: You must ONLY answer questions based on the provided course materials.**
 
 **YOUR PURPOSE:**
-1. Answer questions about {COURSE_NAME} using ONLY the course materials provided
+1. Answer questions about {course_name} using ONLY the course materials provided
 2. Help with course logistics (assignments, deadlines, lab instructions)
 3. Assist with environment setup and tooling (uv, pip, Jupyter, Docker)
 4. Provide programming help related to this course
