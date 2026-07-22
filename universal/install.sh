@@ -149,7 +149,7 @@ curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master
 curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/ndetos_sim_template.py -o ndetos_sim_template.py
 
 # ============================================================
-# STEP 4: Course Customization
+# STEP 4: Course Customization (FIXED - reads from terminal)
 # ============================================================
 echo ""
 echo "=========================================="
@@ -157,7 +157,10 @@ echo "📚 Course Customization"
 echo "=========================================="
 echo ""
 
-# Get course information - using simple read without prompts in the variable names
+# Force reading from terminal for interactive input
+exec < /dev/tty
+
+# Get course information
 read -p "Enter your course code (e.g., CIT 4104): " COURSE_CODE
 read -p "Enter your course name (e.g., Modeling and Simulation): " COURSE_NAME
 read -p "Enter your full name (as students will see it): " INSTRUCTOR_NAME
@@ -174,6 +177,9 @@ print_info "  - Textbook chapters (PDF)"
 print_info "  - Any other course materials"
 echo ""
 read -p "Press Enter when you have copied your materials..."
+
+# Restore stdin
+exec < /dev/stdin
 
 # ============================================================
 # STEP 5: Generate Custom ndetos_sim.py
