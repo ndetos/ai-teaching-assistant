@@ -199,11 +199,23 @@ course_name = os.environ.get('COURSE_NAME', '')
 instructor_name = os.environ.get('INSTRUCTOR_NAME', '')
 institution_name = os.environ.get('INSTITUTION_NAME', '')
 
+# Read the template
 with open('ndetos_sim_template.py', 'r') as f:
-    content = f.read()
+    template_content = f.read()
 
-# Create the system prompt with proper escaping
-system_prompt = f'''You are ndetos, the AI tutor for {course_code} {course_name} at {institution_name}, created by {instructor_name}.
+# The system prompt is now part of the template, so we don't need to generate it
+# We just need to replace the course configuration
+
+# Create the course configuration dictionary
+course_config = f'''COURSE_CONFIG = {{
+    "tutor_name": "ndetos",
+    "tutor_full_name": "AI Tutor by {instructor_name}",
+    "course_code": "{course_code}",
+    "course_name": "{course_name}",
+    "instructor": "{instructor_name}",
+    "institution": "{institution_name}",
+    "greeting": "Welcome to {course_code} {course_name}! I am ndetos, your AI tutor.",
+    "system_prompt": \"\"\"You are ndetos, the AI tutor for {course_code} {course_name} at {institution_name}, created by {instructor_name}.
 
 **CRITICAL INSTRUCTION: You must ONLY answer questions based on the provided course materials.**
 
@@ -227,27 +239,17 @@ system_prompt = f'''You are ndetos, the AI tutor for {course_code} {course_name}
 - Do NOT provide complete code solutions for assignments
 - Do NOT speculate about content not in the provided materials
 
-**Remember: You are a teaching assistant, not a general AI. Your knowledge is LIMITED to the course materials provided.'''  # This is the end of the system_prompt
+**Remember: You are a teaching assistant, not a general AI. Your knowledge is LIMITED to the course materials provided.**\"\"\"
+}}'''
 
-# Escape the system_prompt for use in a Python string literal
-escaped_prompt = system_prompt.replace('"', '\\"').replace('\n', '\\n')
+# Replace the course configuration in the template
+# Use a simpler approach - find and replace the COURSE_CONFIG block
+import re
 
-# Replace course configuration
-content = re.sub(
-    r'COURSE_CONFIG = \{.*?\}',
-    f'''COURSE_CONFIG = {{
-    "tutor_name": "ndetos",
-    "tutor_full_name": "AI Tutor by {instructor_name}",
-    "course_code": "{course_code}",
-    "course_name": "{course_name}",
-    "instructor": "{instructor_name}",
-    "institution": "{institution_name}",
-    "greeting": "Welcome to {course_code} {course_name}! I am ndetos, your AI tutor.",
-    "system_prompt": "{escaped_prompt}"
-}}''',
-    content,
-    flags=re.DOTALL
-)
+# Pattern to match the entire COURSE_CONFIG = {...} block
+pattern = r'COURSE_CONFIG = \{.*?\}'
+# Use DOTALL flag to match across multiple lines
+content = re.sub(pattern, course_config, template_content, flags=re.DOTALL)
 
 # Save the customized file
 with open('ndetos_sim.py', 'w') as f:
@@ -260,7 +262,8 @@ EOF
 if python3 -m py_compile ndetos_sim.py 2>/dev/null; then
     print_success "✅ ndetos_sim.py syntax is valid"
 else
-    print_error "❌ ndetos_sim.py has syntax errors. Please report this to support."
+    print_error "❌ ndetos_sim.py has syntax errors. Showing the error:"
+    python3 -m py_compile ndetos_sim.py
     exit 1
 fi
 
