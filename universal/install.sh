@@ -149,7 +149,7 @@ curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master
 curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/ndetos_sim_template.py -o ndetos_sim_template.py
 
 # ============================================================
-# STEP 4: Course Customization (FIXED - reads from terminal)
+# STEP 4: Course Customization (FIXED - reads directly from /dev/tty)
 # ============================================================
 echo ""
 echo "=========================================="
@@ -157,14 +157,14 @@ echo "📚 Course Customization"
 echo "=========================================="
 echo ""
 
-# Force reading from terminal for interactive input
-exec < /dev/tty
+# Read directly from terminal (works with curl | bash)
+exec 3< /dev/tty
 
 # Get course information
-read -p "Enter your course code (e.g., CIT 4104): " COURSE_CODE
-read -p "Enter your course name (e.g., Modeling and Simulation): " COURSE_NAME
-read -p "Enter your full name (as students will see it): " INSTRUCTOR_NAME
-read -p "Enter your institution name: " INSTITUTION_NAME
+read -p "Enter your course code (e.g., CIT 4104): " COURSE_CODE < /dev/tty
+read -p "Enter your course name (e.g., Modeling and Simulation): " COURSE_NAME < /dev/tty
+read -p "Enter your full name (as students will see it): " INSTRUCTOR_NAME < /dev/tty
+read -p "Enter your institution name: " INSTITUTION_NAME < /dev/tty
 
 # Create course materials folder
 mkdir -p ~/ai-tutor/course-materials
@@ -176,10 +176,7 @@ print_info "  - Lecture notes (DOC, DOCX, TXT, MD)"
 print_info "  - Textbook chapters (PDF)"
 print_info "  - Any other course materials"
 echo ""
-read -p "Press Enter when you have copied your materials..."
-
-# Restore stdin
-exec < /dev/stdin
+read -p "Press Enter when you have copied your materials..." < /dev/tty
 
 # ============================================================
 # STEP 5: Generate Custom ndetos_sim.py
