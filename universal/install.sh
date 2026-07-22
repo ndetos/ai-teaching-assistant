@@ -145,9 +145,6 @@ curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master
 # Download index_course.py
 curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/index_course.py -o index_course.py
 
-# Download ndetos_sim_template.py
-curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/ndetos_sim_template.py -o ndetos_sim_template.py
-
 # ============================================================
 # STEP 4: Course Customization
 # ============================================================
@@ -179,7 +176,7 @@ echo ""
 read -p "Press Enter when you have copied your materials..." < /dev/tty
 
 # ============================================================
-# STEP 5: Generate Custom ndetos_sim.py
+# STEP 5: Generate Custom ndetos_sim.py (FROM SCRATCH - NO TEMPLATE)
 # ============================================================
 print_status "🔧 Creating your personalized AI Tutor..."
 
@@ -196,7 +193,6 @@ export INSTRUCTOR_NAME
 export INSTITUTION_NAME
 
 python3 << 'EOF'
-import re
 import os
 
 # Get variables from environment
@@ -205,11 +201,58 @@ course_name = os.environ.get('COURSE_NAME', '')
 instructor_name = os.environ.get('INSTRUCTOR_NAME', '')
 institution_name = os.environ.get('INSTITUTION_NAME', '')
 
-with open('ndetos_sim_template.py', 'r') as f:
-    content = f.read()
+# Create the entire ndetos_sim.py file from scratch
+ndetos_sim_content = f'''#!/usr/bin/env python3
+"""
+Universal AI Teaching Assistant - Customized for {course_code}
+"""
 
-# Build the system prompt as a multi-line string
-system_prompt_text = f"""You are ndetos, the AI tutor for {course_code} {course_name} at {institution_name}, created by {instructor_name}.
+import os
+import re
+import pickle
+import socket
+import subprocess
+from collections import defaultdict
+from datetime import datetime
+from pathlib import Path
+
+import requests
+from flask import Flask, render_template_string, request, jsonify
+
+app = Flask(__name__)
+
+# ============================================================
+# TECHNICAL CONFIGURATION
+# ============================================================
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "ollama")
+OLLAMA_URL = f"http://{{OLLAMA_HOST}}:11434/api/generate"
+MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b")
+
+# Knowledge base paths
+KB_PATHS = [
+    Path("/app/knowledge/knowledge_base.pkl"),
+    Path("/app/knowledge_base_default.pkl"),
+    Path(__file__).parent / "knowledge_base.pkl",
+]
+
+KNOWLEDGE_BASE_FILE = None
+for path in KB_PATHS:
+    if path.exists():
+        KNOWLEDGE_BASE_FILE = path
+        break
+
+# ============================================================
+# COURSE CONFIGURATION
+# ============================================================
+COURSE_CONFIG = {{
+    "tutor_name": "ndetos",
+    "tutor_full_name": "AI Tutor by {instructor_name}",
+    "course_code": "{course_code}",
+    "course_name": "{course_name}",
+    "instructor": "{instructor_name}",
+    "institution": "{institution_name}",
+    "greeting": "Welcome to {course_code} {course_name}! I am ndetos, your AI tutor.",
+    "system_prompt": r"""You are ndetos, the AI tutor for {course_code} {course_name} at {institution_name}, created by {instructor_name}.
 
 **CRITICAL INSTRUCTION: You must ONLY answer questions based on the provided course materials.**
 
@@ -234,33 +277,322 @@ system_prompt_text = f"""You are ndetos, the AI tutor for {course_code} {course_
 - Do NOT speculate about content not in the provided materials
 
 **Remember: You are a teaching assistant, not a general AI. Your knowledge is LIMITED to the course materials provided."""
+}}
 
-# Convert to a single line with \n for newlines and escape quotes
-system_prompt_line = system_prompt_text.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
+# ============================================================
+# RAG KNOWLEDGE BASE
+# ============================================================
+class CourseKnowledgeBase:
+    def __init__(self):
+        self.knowledge_base = []
+        self.load_knowledge_base()
+    
+    def load_knowledge_base(self):
+        if KNOWLEDGE_BASE_FILE and KNOWLEDGE_BASE_FILE.exists():
+            try:
+                with open(KNOWLEDGE_BASE_FILE, 'rb') as f:
+                    data = pickle.load(f)
+                if isinstance(data, dict) and 'chunks' in data:
+                    self.knowledge_base = data.get('chunks', [])
+                    print(f"📚 Loaded {{len(self.knowledge_base)}} chunks")
+                else:
+                    self.knowledge_base = data
+                    print(f"📚 Loaded {{len(self.knowledge_base)}} items")
+            except Exception as e:
+                print(f"⚠️ Could not load knowledge base: {{e}}")
+    
+    def search(self, question, max_results=3):
+        if not self.knowledge_base:
+            return ""
+        question_lower = question.lower()
+        keywords = [w for w in re.findall(r'\\b\\w{{3,}}\\b', question_lower) 
+                   if w not in ['what', 'how', 'why', 'when', 'where', 'which', 'the', 'a', 'an', 'and', 'or', 'but']]
+        scored = []
+        for item in self.knowledge_base:
+            content = item if isinstance(item, str) else item.get('content', '')
+            if isinstance(item, dict):
+                content = item.get('content', '')
+            if content:
+                score = sum(1 for kw in keywords if kw in content.lower())
+                if score > 0:
+                    scored.append((score, content))
+        scored.sort(key=lambda x: -x[0])
+        if scored:
+            return "\\n---\\n".join([f"[From your course materials]\\n{{c[:1000]}}" for _, c in scored[:max_results]])
+        return ""
 
-# Create the course configuration dictionary
-course_config = f'''COURSE_CONFIG = {{
-    "tutor_name": "ndetos",
-    "tutor_full_name": "AI Tutor by {instructor_name}",
-    "course_code": "{course_code}",
-    "course_name": "{course_name}",
-    "instructor": "{instructor_name}",
-    "institution": "{institution_name}",
-    "greeting": "Welcome to {course_code} {course_name}! I am ndetos, your AI tutor.",
-    "system_prompt": "{system_prompt_line}"
-}}'''
+knowledge = CourseKnowledgeBase()
 
-# Replace the course configuration in the template
-content = re.sub(
-    r'COURSE_CONFIG = \{.*?\}',
-    course_config,
-    content,
-    flags=re.DOTALL
-)
+# ============================================================
+# FLASK APP
+# ============================================================
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    return response
 
-# Save the customized file
+@app.route('/')
+def index():
+    html = f'''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{COURSE_CONFIG['course_code']}} - {{COURSE_CONFIG['course_name']}} AI Tutor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * {{ box-sizing: border-box; }}
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+        }}
+        .chat-container {{
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }}
+        .header {{
+            background: #1a73e8;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }}
+        .header h1 {{ margin: 0; font-size: 1.5rem; }}
+        .header .course-code {{ font-size: 0.8rem; opacity: 0.9; margin-top: 5px; }}
+        .scope-badge {{
+            text-align: center;
+            font-size: 11px;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 5px;
+            margin: 10px;
+            border-radius: 20px;
+        }}
+        #chat {{
+            height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f8f9fa;
+        }}
+        .message {{
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            border-radius: 18px;
+            max-width: 85%;
+            word-wrap: break-word;
+        }}
+        .user {{
+            background: #1a73e8;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+            border-bottom-right-radius: 4px;
+        }}
+        .assistant {{
+            background: #e9ecef;
+            color: #333;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }}
+        .system {{
+            background: #fff3cd;
+            color: #856404;
+            text-align: center;
+            font-style: italic;
+            margin: 10px auto;
+            max-width: 90%;
+        }}
+        .input-area {{
+            display: flex;
+            padding: 15px;
+            gap: 10px;
+            border-top: 1px solid #e0e0e0;
+            background: white;
+        }}
+        input {{
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 24px;
+            font-size: 16px;
+            outline: none;
+        }}
+        button {{
+            padding: 12px 24px;
+            background: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 24px;
+            font-size: 16px;
+            cursor: pointer;
+        }}
+        button:hover {{ background: #1557b0; }}
+        .footer {{
+            text-align: center;
+            padding: 15px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+        }}
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">
+            <h1>🎓 {{COURSE_CONFIG['course_code']}} {{COURSE_CONFIG['course_name']}}</h1>
+            <div class="course-code">👨‍🏫 {{COURSE_CONFIG['instructor']}} | 🤖 Tutor: {{COURSE_CONFIG['tutor_name']}}</div>
+        </div>
+        <div class="scope-badge">
+            📚 I answer questions based on YOUR course materials
+        </div>
+        <div id="chat">
+            <div class="message system">{{COURSE_CONFIG['greeting']}}</div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="question" placeholder="Ask about your course..." autofocus>
+            <button onclick="ask()">Send</button>
+        </div>
+    </div>
+    <div class="footer">
+        💡 Questions are answered using YOUR course materials only
+    </div>
+
+    <script>
+        let loading = false;
+        function escapeHtml(text) {{
+            let div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\\\\n/g, '<br>');
+        }}
+        function addMessage(text, type) {{
+            let chat = document.getElementById('chat');
+            let div = document.createElement('div');
+            div.className = 'message ' + type;
+            div.innerHTML = (type === 'user' ? '👤 ' : (type === 'assistant' ? '🤖 ' : '')) + escapeHtml(text);
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }}
+        function addLoading() {{
+            let chat = document.getElementById('chat');
+            let div = document.createElement('div');
+            div.id = 'loading';
+            div.className = 'message assistant loading';
+            div.innerHTML = '🤖 ndetos is thinking...';
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }}
+        function removeLoading() {{
+            let loading = document.getElementById('loading');
+            if (loading) loading.remove();
+        }}
+        async function ask() {{
+            if (loading) return;
+            let input = document.getElementById('question');
+            let question = input.value.trim();
+            if (!question) return;
+            addMessage(question, 'user');
+            input.value = '';
+            addLoading();
+            loading = true;
+            try {{
+                let response = await fetch('/ask', {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ question: question }})
+                }});
+                let data = await response.json();
+                removeLoading();
+                if (data.error) {{
+                    addMessage('Error: ' + data.error, 'system');
+                }} else {{
+                    addMessage(data.answer, 'assistant');
+                }}
+            }} catch (err) {{
+                removeLoading();
+                addMessage('Connection error: ' + err.message, 'system');
+            }}
+            loading = false;
+            input.focus();
+        }}
+        document.getElementById('question').addEventListener('keypress', function(e) {{
+            if (e.key === 'Enter') ask();
+        }});
+        document.getElementById('question').focus();
+    </script>
+</body>
+</html>
+'''
+    return render_template_string(html)
+
+@app.route('/ask', methods=['POST'])
+def ask():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Invalid request format.'})
+    question = data.get('question', '').strip()
+    if not question:
+        return jsonify({'error': 'Please enter a valid question.'})
+    
+    print(f"\\n📝 Question: {question[:80]}...")
+    
+    # Search course materials
+    course_context = knowledge.search(question)
+    
+    if course_context:
+        prompt = f"""{COURSE_CONFIG['system_prompt']}
+
+Course material from your notes:
+{course_context}
+
+Student question: {question}
+
+INSTRUCTIONS:
+1. Base your answer ONLY on the course material above
+2. Reference the specific week/source
+3. If the material doesn't fully answer, say: "I don't have that in my course materials."
+4. Give hints, not complete solutions
+
+{COURSE_CONFIG['tutor_name']}:"""
+    else:
+        return jsonify({'answer': "I don't have that in my course materials. Please check your notes or ask your instructor."})
+    
+    try:
+        response = requests.post(OLLAMA_URL, json={{
+            "model": MODEL,
+            "prompt": prompt,
+            "stream": False,
+            "temperature": 0.2,
+            "num_predict": 512
+        }}, timeout=90)
+        if response.status_code == 200:
+            answer = response.json().get("response", "No response generated.")
+            return jsonify({'answer': answer})
+        else:
+            return jsonify({'error': f"Ollama error: HTTP {{response.status_code}}"})
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+if __name__ == '__main__':
+    student_url = os.getenv("STUDENT_URL", "http://localhost:5004")
+    print("\\n" + "=" * 60)
+    print(f"🎓 {{COURSE_CONFIG['course_code']}} - {{COURSE_CONFIG['course_name']}}")
+    print("=" * 60)
+    print(f"🤖 Tutor: {{COURSE_CONFIG['tutor_name']}}")
+    print(f"📚 Knowledge base: {{len(knowledge.knowledge_base)}} items")
+    print(f"\\n🌐 STUDENTS CONNECT TO: {{student_url}}")
+    print("\\n⏹️  Press Ctrl+C to stop")
+    print("=" * 60 + "\\n")
+    app.run(host='0.0.0.0', port=5004, debug=False, threaded=True)
+'''
+
+# Write the generated file
 with open('ndetos_sim.py', 'w') as f:
-    f.write(content)
+    f.write(ndetos_sim_content)
 
 print("✅ Customized ndetos_sim.py created")
 EOF
@@ -273,6 +605,7 @@ else
     python3 -m py_compile ndetos_sim.py
     exit 1
 fi
+
 # ============================================================
 # STEP 6: Get Host IP
 # ============================================================
