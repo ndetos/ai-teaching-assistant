@@ -208,8 +208,8 @@ institution_name = os.environ.get('INSTITUTION_NAME', '')
 with open('ndetos_sim_template.py', 'r') as f:
     content = f.read()
 
-# Build the course configuration as a raw string to avoid escaping issues
-system_prompt_text = f'''You are ndetos, the AI tutor for {course_code} {course_name} at {institution_name}, created by {instructor_name}.
+# Build the system prompt as a multi-line string
+system_prompt_text = f"""You are ndetos, the AI tutor for {course_code} {course_name} at {institution_name}, created by {instructor_name}.
 
 **CRITICAL INSTRUCTION: You must ONLY answer questions based on the provided course materials.**
 
@@ -233,11 +233,10 @@ system_prompt_text = f'''You are ndetos, the AI tutor for {course_code} {course_
 - Do NOT provide complete code solutions for assignments
 - Do NOT speculate about content not in the provided materials
 
-**Remember: You are a teaching assistant, not a general AI. Your knowledge is LIMITED to the course materials provided.'''
+**Remember: You are a teaching assistant, not a general AI. Your knowledge is LIMITED to the course materials provided."""
 
-# Escape the prompt for inclusion in a Python dictionary
-# We need to escape double quotes and backslashes
-escaped_prompt = system_prompt_text.replace('\\', '\\\\').replace('"', '\\"')
+# Convert to a single line with \n for newlines
+system_prompt_line = system_prompt_text.replace('\n', '\\n').replace('"', '\\"')
 
 # Create the course configuration dictionary
 course_config = f'''COURSE_CONFIG = {{
@@ -248,7 +247,7 @@ course_config = f'''COURSE_CONFIG = {{
     "instructor": "{instructor_name}",
     "institution": "{institution_name}",
     "greeting": "Welcome to {course_code} {course_name}! I am ndetos, your AI tutor.",
-    "system_prompt": "{escaped_prompt}"
+    "system_prompt": "{system_prompt_line}"
 }}'''
 
 # Replace the course configuration in the template
