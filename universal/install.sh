@@ -157,7 +157,7 @@ echo "📚 Course Customization"
 echo "=========================================="
 echo ""
 
-# Get course information
+# Get course information - using simple read without prompts in the variable names
 read -p "Enter your course code (e.g., CIT 4104): " COURSE_CODE
 read -p "Enter your course name (e.g., Modeling and Simulation): " COURSE_NAME
 read -p "Enter your full name (as students will see it): " INSTRUCTOR_NAME
@@ -327,11 +327,18 @@ sleep 5
 if curl -s -o /dev/null -w "%{http_code}" "http://localhost:5004" | grep -q "200\|302\|301"; then
     print_success "AI Tutor is running!"
 else
-    print_warning "Service may still be starting. Check: $STUDENT_URL"
+    print_info "Service may still be starting. Check: $STUDENT_URL"
 fi
 
 # ============================================================
-# STEP 11: Create Desktop Shortcuts
+# STEP 11: Restart ai-tutor container to load new configuration
+# ============================================================
+print_status "Restarting ai-tutor to load your course configuration..."
+docker restart ai-tutor
+sleep 5
+
+# ============================================================
+# STEP 12: Create Desktop Shortcuts
 # ============================================================
 if [[ "$OS_TYPE" == "Linux" ]] && [ -d "$HOME/Desktop" ]; then
     cat > "$HOME/Desktop/ai-tutor.desktop" << EOF
@@ -367,22 +374,22 @@ EOF
 chmod +x "$AI_DIR/stop.sh" 2>/dev/null
 
 # ============================================================
-# STEP 12: Done
+# STEP 13: Done - WITH CORRECT VARIABLES
 # ============================================================
 echo ""
 echo "=========================================="
 echo "✅ Installation Complete!"
 echo "=========================================="
 echo ""
-echo "📚 Course: $COURSE_CODE - ${COURSE_NAME}"
+echo "📚 Course: ${COURSE_CODE} - ${COURSE_NAME}"
 echo "👨🏫 Instructor: ${INSTRUCTOR_NAME}"
 echo "🏛️  Institution: ${INSTITUTION_NAME}"
 echo ""
-echo "📚 Students connect to: $STUDENT_URL"
+echo "📚 Students connect to: ${STUDENT_URL}"
 echo "💻 You connect to: http://localhost:5004"
 echo ""
-echo "📁 Files saved in: $AI_DIR"
+echo "📁 Files saved in: ${AI_DIR}"
 echo ""
-echo "🔧 To stop: cd $AI_DIR && ./stop.sh"
+echo "🔧 To stop: cd ${AI_DIR} && ./stop.sh"
 echo "📧 Support: john.wandeto@dkut.ac.ke"
 echo "=========================================="
