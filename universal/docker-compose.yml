@@ -16,17 +16,13 @@ services:
     environment:
       - OLLAMA_HOST=ollama
       - STUDENT_URL=${STUDENT_URL:-http://localhost:5004}
-      # Course customization - set these via install.sh
-      - COURSE_CODE=${COURSE_CODE:-Your Course}
-      - COURSE_NAME=${COURSE_NAME:-Your Course}
-      - INSTRUCTOR=${INSTRUCTOR:-Your Instructor}
-      - INSTITUTION=${INSTITUTION:-Your Institution}
-      - TUTOR_NAME=${TUTOR_NAME:-ndetos}
     volumes:
-      # Mount custom course materials for indexing (optional)
-      - ./course-materials:/app/course-materials:ro
-      # Mount the generated knowledge base
-      - ./knowledge:/app/knowledge:ro
+      # IMPORTANT: Mount the customized Python file
+      - /home/wandeto/ai-tutor/ndetos_sim.py:/app/ndetos_sim.py
+      # IMPORTANT: Mount the generated knowledge base
+      - /home/wandeto/ai-tutor/knowledge_base.pkl:/app/knowledge/knowledge_base.pkl
+      # Course materials (read-only is fine for production)
+      - /home/wandeto/ai-tutor/course-materials:/app/course_materials:ro
     depends_on:
       - ollama
     restart: unless-stopped
