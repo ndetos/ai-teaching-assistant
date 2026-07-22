@@ -149,7 +149,7 @@ curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master
 curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/ndetos_sim_template.py -o ndetos_sim_template.py
 
 # ============================================================
-# STEP 4: Course Customization (FIXED - reads directly from /dev/tty)
+# STEP 4: Course Customization
 # ============================================================
 echo ""
 echo "=========================================="
@@ -183,6 +183,12 @@ read -p "Press Enter when you have copied your materials..." < /dev/tty
 # ============================================================
 print_status "🔧 Creating your personalized AI Tutor..."
 
+# SAFETY CHECK: Ensure ndetos_sim.py is not a directory
+if [ -d "ndetos_sim.py" ]; then
+    print_info "🗑️ Removing existing directory named ndetos_sim.py..."
+    rm -rf ndetos_sim.py
+fi
+
 # Export variables so Python can access them
 export COURSE_CODE
 export COURSE_NAME
@@ -199,23 +205,11 @@ course_name = os.environ.get('COURSE_NAME', '')
 instructor_name = os.environ.get('INSTRUCTOR_NAME', '')
 institution_name = os.environ.get('INSTITUTION_NAME', '')
 
-# Read the template
 with open('ndetos_sim_template.py', 'r') as f:
-    template_content = f.read()
+    content = f.read()
 
-# The system prompt is now part of the template, so we don't need to generate it
-# We just need to replace the course configuration
-
-# Create the course configuration dictionary
-course_config = f'''COURSE_CONFIG = {{
-    "tutor_name": "ndetos",
-    "tutor_full_name": "AI Tutor by {instructor_name}",
-    "course_code": "{course_code}",
-    "course_name": "{course_name}",
-    "instructor": "{instructor_name}",
-    "institution": "{institution_name}",
-    "greeting": "Welcome to {course_code} {course_name}! I am ndetos, your AI tutor.",
-    "system_prompt": \"\"\"You are ndetos, the AI tutor for {course_code} {course_name} at {institution_name}, created by {instructor_name}.
+# Build the course configuration as a raw string to avoid escaping issues
+system_prompt_text = f'''You are ndetos, the AI tutor for {course_code} {course_name} at {institution_name}, created by {instructor_name}.
 
 **CRITICAL INSTRUCTION: You must ONLY answer questions based on the provided course materials.**
 
@@ -239,17 +233,31 @@ course_config = f'''COURSE_CONFIG = {{
 - Do NOT provide complete code solutions for assignments
 - Do NOT speculate about content not in the provided materials
 
-**Remember: You are a teaching assistant, not a general AI. Your knowledge is LIMITED to the course materials provided.**\"\"\"
+**Remember: You are a teaching assistant, not a general AI. Your knowledge is LIMITED to the course materials provided.'''
+
+# Escape the prompt for inclusion in a Python dictionary
+# We need to escape double quotes and backslashes
+escaped_prompt = system_prompt_text.replace('\\', '\\\\').replace('"', '\\"')
+
+# Create the course configuration dictionary
+course_config = f'''COURSE_CONFIG = {{
+    "tutor_name": "ndetos",
+    "tutor_full_name": "AI Tutor by {instructor_name}",
+    "course_code": "{course_code}",
+    "course_name": "{course_name}",
+    "instructor": "{instructor_name}",
+    "institution": "{institution_name}",
+    "greeting": "Welcome to {course_code} {course_name}! I am ndetos, your AI tutor.",
+    "system_prompt": "{escaped_prompt}"
 }}'''
 
 # Replace the course configuration in the template
-# Use a simpler approach - find and replace the COURSE_CONFIG block
-import re
-
-# Pattern to match the entire COURSE_CONFIG = {...} block
-pattern = r'COURSE_CONFIG = \{.*?\}'
-# Use DOTALL flag to match across multiple lines
-content = re.sub(pattern, course_config, template_content, flags=re.DOTALL)
+content = re.sub(
+    r'COURSE_CONFIG = \{.*?\}',
+    course_config,
+    content,
+    flags=re.DOTALL
+)
 
 # Save the customized file
 with open('ndetos_sim.py', 'w') as f:
