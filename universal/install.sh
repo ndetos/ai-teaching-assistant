@@ -235,8 +235,8 @@ system_prompt_text = f"""You are ndetos, the AI tutor for {course_code} {course_
 
 **Remember: You are a teaching assistant, not a general AI. Your knowledge is LIMITED to the course materials provided."""
 
-# Convert to a single line with \n for newlines
-system_prompt_line = system_prompt_text.replace('\n', '\\n').replace('"', '\\"')
+# Convert to a single line with \n for newlines and escape quotes
+system_prompt_line = system_prompt_text.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
 
 # Create the course configuration dictionary
 course_config = f'''COURSE_CONFIG = {{
@@ -273,7 +273,6 @@ else
     python3 -m py_compile ndetos_sim.py
     exit 1
 fi
-
 # ============================================================
 # STEP 6: Get Host IP
 # ============================================================
