@@ -286,7 +286,7 @@ class CourseKnowledgeBase:
     def __init__(self):
         self.knowledge_base = []
         self.load_knowledge_base()
-    
+
     def load_knowledge_base(self):
         if KNOWLEDGE_BASE_FILE and KNOWLEDGE_BASE_FILE.exists():
             try:
@@ -300,7 +300,7 @@ class CourseKnowledgeBase:
                     print(f"📚 Loaded {{len(self.knowledge_base)}} items")
             except Exception as e:
                 print(f"⚠️ Could not load knowledge base: {{e}}")
-    
+
     def search(self, question, max_results=3):
         if not self.knowledge_base:
             return ""
@@ -445,7 +445,7 @@ def index():
     <div class="chat-container">
         <div class="header">
             <h1>🎓 {{COURSE_CONFIG['course_code']}} {{COURSE_CONFIG['course_name']}}</h1>
-            <div class="course-code">👨‍🏫 {{COURSE_CONFIG['instructor']}} | 🤖 Tutor: {{COURSE_CONFIG['tutor_name']}}</div>
+            <div class="course-code">👨🏫 {{COURSE_CONFIG['instructor']}} | 🤖 Tutor: {{COURSE_CONFIG['tutor_name']}}</div>
         </div>
         <div class="scope-badge">
             📚 I answer questions based on YOUR course materials
@@ -537,12 +537,12 @@ def ask():
     question = data.get('question', '').strip()
     if not question:
         return jsonify({'error': 'Please enter a valid question.'})
-    
+
     print(f"\\n📝 Question: {question[:80]}...")
-    
+
     # Search course materials
     course_context = knowledge.search(question)
-    
+
     if course_context:
         prompt = f"""{COURSE_CONFIG['system_prompt']}
 
@@ -560,7 +560,7 @@ INSTRUCTIONS:
 {COURSE_CONFIG['tutor_name']}:"""
     else:
         return jsonify({'answer': "I don't have that in my course materials. Please check your notes or ask your instructor."})
-    
+
     try:
         response = requests.post(OLLAMA_URL, json={{
             "model": MODEL,
@@ -605,7 +605,6 @@ else
     python3 -m py_compile ndetos_sim.py
     exit 1
 fi
-
 # ============================================================
 # STEP 6: Get Host IP
 # ============================================================
