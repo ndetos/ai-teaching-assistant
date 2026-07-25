@@ -18,26 +18,44 @@ echo ""
 echo "🚀 ndetos AI Teaching Assistant"
 echo "=========================================="
 
-# Detect OS
-OS="$(uname -s 2>/dev/null || echo "Windows")"
-case "${OS}" in
-    Linux*)     OS_TYPE="Linux";;
-    Darwin*)    OS_TYPE="macOS";;
-    CYGWIN*|MINGW*|MSYS*) OS_TYPE="Windows";;
-    *)          
-        if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "$WSLENV" ]]; then
-            OS_TYPE="Windows"
-        else
-            OS_TYPE="UNKNOWN"
-        fi
-        ;;
-esac
+# ============================================================
+# CROSS-PLATFORM PATH HANDLING
+# ============================================================
+detect_os() {
+    OS="$(uname -s 2>/dev/null || echo "Windows")"
+    case "${OS}" in
+        Linux*)     OS_TYPE="Linux";;
+        Darwin*)    OS_TYPE="macOS";;
+        CYGWIN*|MINGW*|MSYS*) OS_TYPE="Windows";;
+        *)          
+            if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "$WSLENV" ]]; then
+                OS_TYPE="Windows"
+            else
+                OS_TYPE="UNKNOWN"
+            fi
+            ;;
+    esac
+    
+    # Check if running in WSL
+    IS_WSL=false
+    grep -qi microsoft /proc/version 2>/dev/null && IS_WSL=true
+}
 
-IS_WSL=false
-grep -qi microsoft /proc/version 2>/dev/null && IS_WSL=true
+detect_home_dir() {
+    if [[ "$OS_TYPE" == "Windows" ]]; then
+        # Windows uses USERPROFILE
+        AI_DIR="$USERPROFILE/ai-tutor"
+    else
+        # Linux/macOS use HOME
+        AI_DIR="$HOME/ai-tutor"
+    fi
+}
+
+detect_os
+detect_home_dir
 
 # ============================================================
-# STEP 1: Docker Installation
+# STEP 1: Docker Installation (Cross-Platform)
 # ============================================================
 print_status "Checking system requirements..."
 
@@ -46,11 +64,14 @@ if ! command -v docker &> /dev/null; then
     
     case "$OS_TYPE" in
         Linux)
-            curl -fsSL https://get.docker.com | sh
             if $IS_WSL; then
+                print_info "Detected WSL environment. Installing Docker for WSL..."
+                curl -fsSL https://get.docker.com -o get-docker.sh
+                sudo sh get-docker.sh
                 sudo usermod -aG docker $USER
                 print_info "WSL: Please restart your WSL terminal, then run this script again"
             else
+                curl -fsSL https://get.docker.com | sh
                 sudo usermod -aG docker $USER
                 print_info "Please log out and back in, then run this script again"
             fi
@@ -71,29 +92,43 @@ if ! command -v docker &> /dev/null; then
             exit 0
             ;;
         Windows)
-            powershell.exe -Command "
-                \$installer = '\$env:TEMP\docker-installer.exe';
-                Invoke-WebRequest -Uri 'https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe' -OutFile \$installer;
-                Start-Process -FilePath \$installer -ArgumentList 'install', '--quiet' -Wait;
-            " 2>/dev/null
-            echo ""
-            print_info "To complete Docker Desktop setup on Windows:"
-            echo "   1. Docker Desktop installer will open - follow the wizard"
-            echo "   2. IMPORTANT: Check 'Use WSL 2 instead of Hyper-V' when prompted"
-            echo "   3. Restart your computer when installation completes"
-            echo "   4. After restart, launch Docker Desktop from Start Menu"
-            echo "   5. Wait for the Docker whale icon in system tray to stop animating"
-            echo ""
-            print_info "Once Docker is running, run this script again"
-            exit 0
+            # Check if running in PowerShell/CMD or WSL
+            if $IS_WSL; then
+                print_info "WSL detected. Installing Docker Desktop for Windows..."
+                print_info "Please install Docker Desktop from: https://docker.com"
+                print_info "Enable WSL 2 integration in Docker Desktop settings"
+                echo ""
+                read -p "Press Enter after installing and configuring Docker Desktop..."
+            else
+                print_info "Downloading Docker Desktop for Windows..."
+                powershell.exe -Command "
+                    \$installer = '\$env:TEMP\docker-installer.exe';
+                    Write-Host 'Downloading Docker Desktop...' -ForegroundColor Yellow;
+                    Invoke-WebRequest -Uri 'https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe' -OutFile \$installer;
+                    Write-Host 'Installing Docker Desktop...' -ForegroundColor Yellow;
+                    Start-Process -FilePath \$installer -ArgumentList 'install', '--quiet' -Wait;
+                    Write-Host 'Docker Desktop installation initiated.' -ForegroundColor Green;
+                " 2>/dev/null
+                echo ""
+                print_info "To complete Docker Desktop setup on Windows:"
+                echo "   1. Docker Desktop installer will open - follow the wizard"
+                echo "   2. IMPORTANT: Check 'Use WSL 2 instead of Hyper-V' when prompted"
+                echo "   3. Restart your computer when installation completes"
+                echo "   4. After restart, launch Docker Desktop from Start Menu"
+                echo "   5. Wait for the Docker whale icon in system tray to stop animating"
+                echo ""
+                print_info "Once Docker is running, run this script again"
+                exit 0
+            fi
             ;;
         *)
-            print_error "Please install Docker from https://docker.com"
+            print_error "Unsupported OS. Please install Docker manually from https://docker.com"
             exit 1
             ;;
     esac
 fi
 
+# Ensure Docker is running
 if ! docker info &> /dev/null; then
     case "$OS_TYPE" in
         Linux)
@@ -117,20 +152,16 @@ if ! docker info &> /dev/null; then
         macOS|Windows)
             echo ""
             print_info "Please start Docker Desktop and run this script again"
+            print_info "   - On Windows: Click Start → Docker Desktop"
+            print_info "   - On macOS: Open Applications → Docker"
             exit 0
             ;;
     esac
 fi
 
 # ============================================================
-# STEP 2: Setup Directory
+# STEP 2: Setup Directory (Cross-Platform)
 # ============================================================
-if [[ "$OS_TYPE" == "Windows" ]]; then
-    AI_DIR="$USERPROFILE/ai-tutor"
-else
-    AI_DIR="$HOME/ai-tutor"
-fi
-
 mkdir -p "$AI_DIR"
 cd "$AI_DIR"
 
@@ -139,11 +170,19 @@ cd "$AI_DIR"
 # ============================================================
 print_status "Downloading AI Tutor configuration..."
 
-# Download docker-compose.yml
-curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/docker-compose.yml -o docker-compose.yml
-
-# Download index_course.py
-curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/index_course.py -o index_course.py
+# Use curl with Windows compatibility
+if [[ "$OS_TYPE" == "Windows" ]] && ! command -v curl &> /dev/null; then
+    # Fallback to PowerShell Invoke-WebRequest if curl is not available
+    powershell.exe -Command "
+        Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/docker-compose.yml' -OutFile 'docker-compose.yml';
+        Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/index_course.py' -OutFile 'index_course.py';
+        Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/ndetos_sim_template.py' -OutFile 'ndetos_sim_template.py';
+    " 2>/dev/null
+else
+    curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/docker-compose.yml -o docker-compose.yml
+    curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/index_course.py -o index_course.py
+    curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/ndetos_sim_template.py -o ndetos_sim_template.py
+fi
 
 # ============================================================
 # STEP 4: Course Customization
@@ -154,7 +193,7 @@ echo "📚 Course Customization"
 echo "=========================================="
 echo ""
 
-# Read directly from terminal (works with curl | bash)
+# Read directly from terminal (works with curl | bash on all platforms)
 exec 3< /dev/tty
 
 # Get course information
@@ -164,10 +203,10 @@ read -p "Enter your full name (as students will see it): " INSTRUCTOR_NAME < /de
 read -p "Enter your institution name: " INSTITUTION_NAME < /dev/tty
 
 # Create course materials folder
-mkdir -p ~/ai-tutor/course-materials
+mkdir -p "$AI_DIR/course-materials"
 
 echo ""
-print_info "Please copy your course materials into: ~/ai-tutor/course-materials/"
+print_info "Please copy your course materials into: $AI_DIR/course-materials/"
 print_info "  - Lecture slides (PPT, PDF, PPTX)"
 print_info "  - Lecture notes (DOC, DOCX, TXT, MD)"
 print_info "  - Textbook chapters (PDF)"
@@ -175,8 +214,11 @@ print_info "  - Any other course materials"
 echo ""
 read -p "Press Enter when you have copied your materials..." < /dev/tty
 
+# Restore stdin
+exec < /dev/stdin
+
 # ============================================================
-# STEP 5: Generate Custom ndetos_sim.py
+# STEP 5: Generate Custom ndetos_sim.py (Cross-Platform)
 # ============================================================
 print_status "🔧 Creating your personalized AI Tutor..."
 
@@ -202,7 +244,7 @@ instructor_name = os.environ.get('INSTRUCTOR_NAME', '')
 institution_name = os.environ.get('INSTITUTION_NAME', '')
 
 # ============================================================
-# HTML TEMPLATE
+# HTML TEMPLATE (using simple string with placeholders)
 # ============================================================
 html_template = """
 <!DOCTYPE html>
@@ -473,7 +515,7 @@ COURSE_CONFIG = {{
 }}
 
 # ============================================================
-# KNOWLEDGE BASE (FIXED: Now loads from the correct mount path)
+# KNOWLEDGE BASE
 # ============================================================
 class CourseKnowledgeBase:
     def __init__(self):
@@ -481,13 +523,21 @@ class CourseKnowledgeBase:
         self.load_knowledge_base()
 
     def load_knowledge_base(self):
-        # Check both possible paths
+        # Check multiple possible paths (cross-platform)
         kb_paths = [
             Path("/app/knowledge/knowledge_base.pkl"),
             Path("/app/knowledge_base.pkl"),
             Path("/tmp/indexing/knowledge_base.pkl"),
-            Path("/home/wandeto/ai-tutor/knowledge_base.pkl")
         ]
+        
+        # Add Windows-specific paths if on Windows
+        if os.name == 'nt' or os.environ.get('OS', '').lower().startswith('windows'):
+            userprofile = os.environ.get('USERPROFILE', '')
+            if userprofile:
+                kb_paths.append(Path(userprofile) / "ai-tutor" / "knowledge" / "knowledge_base.pkl")
+        else:
+            # Unix-like paths
+            kb_paths.append(Path.home() / "ai-tutor" / "knowledge" / "knowledge_base.pkl")
         
         kb_path = None
         for path in kb_paths:
@@ -621,16 +671,24 @@ else
 fi
 
 # ============================================================
-# STEP 6: Get Host IP
+# STEP 6: Get Host IP (Cross-Platform)
 # ============================================================
 if [[ "$OS_TYPE" == "Windows" ]]; then
+    # Windows IP detection using PowerShell
     HOST_IP=$(powershell.exe -Command "Get-NetIPAddress -AddressFamily IPv4 | Where-Object {\$_.IPAddress -notmatch '^127\.'} | Select-Object -First 1 | ForEach-Object {\$_.IPAddress}" 2>/dev/null | tr -d '\r\n')
-    [ -z "$HOST_IP" ] && HOST_IP=$(ipconfig | grep -i "IPv4" | grep -v "127.0.0.1" | head -1 | awk -F: '{print $2}' | xargs)
+    if [ -z "$HOST_IP" ]; then
+        HOST_IP=$(ipconfig | grep -i "IPv4" | grep -v "127.0.0.1" | head -1 | awk -F: '{print $2}' | xargs)
+    fi
 else
+    # Linux/macOS IP detection
     HOST_IP=$(ip -4 addr show 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^127\.' | head -1)
-    [ -z "$HOST_IP" ] && HOST_IP=$(ifconfig 2>/dev/null | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
+    if [ -z "$HOST_IP" ]; then
+        HOST_IP=$(ifconfig 2>/dev/null | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
+    fi
 fi
-[ -z "$HOST_IP" ] && HOST_IP="localhost"
+if [ -z "$HOST_IP" ]; then
+    HOST_IP="localhost"
+fi
 
 export STUDENT_URL="http://$HOST_IP:5004"
 
@@ -651,35 +709,45 @@ else
 fi
 
 # ============================================================
-# STEP 8: Index Course Materials (INSIDE DOCKER - FINAL FIX)
+# STEP 8: Index Course Materials (Cross-Platform)
 # ============================================================
 print_status "🔍 Indexing your course materials (this may take a few minutes)..."
 
 # Wait for container to be fully ready
 sleep 5
 
-# Create a writable temp directory in the container
+# Create directories
 docker exec ai-tutor mkdir -p /tmp/indexing
+mkdir -p "$AI_DIR/knowledge"
 
-# Create the knowledge directory on the host
-mkdir -p ~/ai-tutor/knowledge
+# Copy course materials to container (cross-platform path handling)
+if [[ "$OS_TYPE" == "Windows" ]]; then
+    # Convert Windows path to WSL/Linux format if needed
+    COURSE_MATERIALS_PATH=$(echo "$AI_DIR/course-materials" | sed 's/\\/\//g')
+    # Use docker cp with Windows path (works in Git Bash/PowerShell)
+    docker cp "$AI_DIR/course-materials/." ai-tutor:/tmp/indexing/course-materials/ 2>/dev/null || {
+        # Fallback: try using relative path
+        docker cp course-materials/. ai-tutor:/tmp/indexing/course-materials/
+    }
+else
+    docker cp "$AI_DIR/course-materials/." ai-tutor:/tmp/indexing/course-materials/
+fi
 
-# Copy course materials from host to container temp dir
-docker cp ~/ai-tutor/course-materials/. ai-tutor:/tmp/indexing/course-materials/
-
-# Copy the index_course.py script to the container
+# Copy the index_course.py script
 docker cp index_course.py ai-tutor:/tmp/indexing/
 
-# Run the indexing inside the container
+# Run the indexing
 docker exec ai-tutor python3 /tmp/indexing/index_course.py /tmp/indexing/course-materials/ -o /tmp/indexing/knowledge_base.pkl
 
-# Copy the generated knowledge base to the host's knowledge directory
-docker cp ai-tutor:/tmp/indexing/knowledge_base.pkl ~/ai-tutor/knowledge/knowledge_base.pkl
+# Copy the knowledge base back
+docker cp ai-tutor:/tmp/indexing/knowledge_base.pkl "$AI_DIR/knowledge/knowledge_base.pkl"
 
-# Clean up temp files in container
+# Clean up
 docker exec ai-tutor rm -rf /tmp/indexing
 
 print_success "✅ Course indexed successfully!"
+
+# ============================================================
 # STEP 9: Pull AI Model
 # ============================================================
 print_status "Downloading the AI model (3.2GB - may take 5-15 minutes)..."
@@ -712,7 +780,7 @@ docker restart ai-tutor
 sleep 5
 
 # ============================================================
-# STEP 12: Create Desktop Shortcuts
+# STEP 12: Create Desktop Shortcuts (Cross-Platform)
 # ============================================================
 if [[ "$OS_TYPE" == "Linux" ]] && [ -d "$HOME/Desktop" ]; then
     cat > "$HOME/Desktop/ai-tutor.desktop" << EOF
@@ -729,6 +797,7 @@ EOF
 fi
 
 if [[ "$OS_TYPE" == "Windows" ]]; then
+    # Create a batch file for Windows
     cat > "$USERPROFILE/Desktop/start-ai-tutor.bat" << EOF
 @echo off
 echo Starting $COURSE_CODE AI Tutor...
@@ -736,9 +805,26 @@ cd /d "%USERPROFILE%\ai-tutor"
 docker compose up
 pause
 EOF
+    
+    # Create a PowerShell script for Windows (better)
+    cat > "$USERPROFILE/Desktop/start-ai-tutor.ps1" << EOF
+Write-Host "Starting $COURSE_CODE AI Tutor..." -ForegroundColor Cyan
+Set-Location "\$env:USERPROFILE\ai-tutor"
+docker compose up
+Read-Host "Press Enter to continue"
+EOF
+    
+    # Create a Windows shortcut using PowerShell
+    powershell.exe -Command "
+        \$WshShell = New-Object -comObject WScript.Shell;
+        \$Shortcut = \$WshShell.CreateShortcut(\"\$env:USERPROFILE\Desktop\AI Tutor $COURSE_CODE.lnk\");
+        \$Shortcut.TargetPath = \"powershell.exe\";
+        \$Shortcut.Arguments = \"-ExecutionPolicy Bypass -File `\"\$env:USERPROFILE\Desktop\start-ai-tutor.ps1`\"\";
+        \$Shortcut.Save();
+    " 2>/dev/null
 fi
 
-# Create stop script
+# Create stop script (cross-platform)
 cat > "$AI_DIR/stop.sh" << 'EOF'
 #!/bin/bash
 cd "$(dirname "$0")"
@@ -747,8 +833,19 @@ echo "✅ ndetos stopped"
 EOF
 chmod +x "$AI_DIR/stop.sh" 2>/dev/null
 
+# Windows stop batch file
+if [[ "$OS_TYPE" == "Windows" ]]; then
+    cat > "$AI_DIR/stop.bat" << EOF
+@echo off
+cd /d "%USERPROFILE%\ai-tutor"
+docker compose down
+echo ✅ ndetos stopped
+pause
+EOF
+fi
+
 # ============================================================
-# STEP 13: Done - WITH CORRECT VARIABLES
+# STEP 13: Done
 # ============================================================
 echo ""
 echo "=========================================="
@@ -764,6 +861,12 @@ echo "💻 You connect to: http://localhost:5004"
 echo ""
 echo "📁 Files saved in: ${AI_DIR}"
 echo ""
-echo "🔧 To stop: cd ${AI_DIR} && ./stop.sh"
+echo "🔧 To stop:"
+if [[ "$OS_TYPE" == "Windows" ]]; then
+    echo "   Double-click stop.bat in $AI_DIR"
+else
+    echo "   cd ${AI_DIR} && ./stop.sh"
+fi
+echo ""
 echo "📧 Support: john.wandeto@dkut.ac.ke"
 echo "=========================================="
