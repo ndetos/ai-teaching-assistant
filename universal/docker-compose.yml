@@ -17,11 +17,11 @@ services:
       - OLLAMA_HOST=ollama
       - STUDENT_URL=${STUDENT_URL:-http://localhost:5004}
     volumes:
-      # IMPORTANT: Mount the customized Python file
+      # Mount the customized Python file
       - /home/wandeto/ai-tutor/ndetos_sim.py:/app/ndetos_sim.py
-      # IMPORTANT: Mount the generated knowledge base
-      - /home/wandeto/ai-tutor/knowledge_base.pkl:/app/knowledge/knowledge_base.pkl
-      # Course materials (read-only is fine for production)
+      # Mount the knowledge base directory (not the file)
+      - /home/wandeto/ai-tutor/knowledge:/app/knowledge
+      # Course materials (read-only)
       - /home/wandeto/ai-tutor/course-materials:/app/course_materials:ro
     depends_on:
       - ollama

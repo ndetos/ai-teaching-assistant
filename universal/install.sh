@@ -661,7 +661,10 @@ sleep 5
 # Create a writable temp directory in the container
 docker exec ai-tutor mkdir -p /tmp/indexing
 
-# Copy course materials from host to container's temp dir
+# Create the knowledge directory on the host
+mkdir -p ~/ai-tutor/knowledge
+
+# Copy course materials from host to container temp dir
 docker cp ~/ai-tutor/course-materials/. ai-tutor:/tmp/indexing/course-materials/
 
 # Copy the index_course.py script to the container
@@ -670,31 +673,13 @@ docker cp index_course.py ai-tutor:/tmp/indexing/
 # Run the indexing inside the container
 docker exec ai-tutor python3 /tmp/indexing/index_course.py /tmp/indexing/course-materials/ -o /tmp/indexing/knowledge_base.pkl
 
-# --- CRITICAL FIX: Ensure the destination is a file, not a directory ---
-# Stop the container to release any locks
-print_info "🔄 Stopping container to safely handle knowledge_base..."
-docker stop ai-tutor 2>/dev/null || true
-
-# Remove the directory completely
-sudo rm -rf ~/ai-tutor/knowledge_base.pkl
-
-# Create an empty file so Docker doesn't create a directory
-touch ~/ai-tutor/knowledge_base.pkl
-
-# Restart the container
-docker start ai-tutor
-
-# Wait for container to be ready
-sleep 3
-
-# Copy the generated knowledge base to the host
-docker cp ai-tutor:/tmp/indexing/knowledge_base.pkl ~/ai-tutor/knowledge_base.pkl
+# Copy the generated knowledge base to the host's knowledge directory
+docker cp ai-tutor:/tmp/indexing/knowledge_base.pkl ~/ai-tutor/knowledge/knowledge_base.pkl
 
 # Clean up temp files in container
 docker exec ai-tutor rm -rf /tmp/indexing
 
 print_success "✅ Course indexed successfully!"
-# ============================================================
 # STEP 9: Pull AI Model
 # ============================================================
 print_status "Downloading the AI model (3.2GB - may take 5-15 minutes)..."
