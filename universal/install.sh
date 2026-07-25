@@ -201,9 +201,9 @@ instructor_name = os.environ.get('INSTRUCTOR_NAME', '')
 institution_name = os.environ.get('INSTITUTION_NAME', '')
 
 # ============================================================
-# HTML TEMPLATE (stored as a raw string to avoid f-string issues)
+# HTML TEMPLATE (using triple quotes, no f-string)
 # ============================================================
-html_template = r'''
+html_template = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -394,7 +394,7 @@ html_template = r'''
     </script>
 </body>
 </html>
-'''
+"""
 
 # ============================================================
 # Build the complete ndetos_sim.py content
@@ -532,7 +532,7 @@ def add_security_headers(response):
 
 @app.route('/')
 def index():
-    html = f'''{html_template}'''
+    html = """{html_template}"""
     return render_template_string(html)
 
 @app.route('/ask', methods=['POST'])
