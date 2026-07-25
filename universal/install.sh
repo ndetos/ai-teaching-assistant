@@ -176,7 +176,7 @@ echo ""
 read -p "Press Enter when you have copied your materials..." < /dev/tty
 
 # ============================================================
-# STEP 5: Generate Custom ndetos_sim.py (USING CORRECT TEMPLATING)
+# STEP 5: Generate Custom ndetos_sim.py (USING A SIMPLER APPROACH)
 # ============================================================
 print_status "🔧 Creating your personalized AI Tutor..."
 
@@ -202,39 +202,39 @@ instructor_name = os.environ.get('INSTRUCTOR_NAME', '')
 institution_name = os.environ.get('INSTITUTION_NAME', '')
 
 # ============================================================
-# HTML TEMPLATE (using Jinja2 style for Flask's render_template_string)
+# HTML TEMPLATE (using simple string with placeholders)
 # ============================================================
 html_template = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{ course_code }} - {{ course_name }} AI Tutor</title>
+    <title>{course_code} - {course_name} AI Tutor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        * { box-sizing: border-box; }
-        body {
+        * {{ box-sizing: border-box; }}
+        body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
-        }
-        .chat-container {
+        }}
+        .chat-container {{
             background: white;
             border-radius: 20px;
             overflow: hidden;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .header {
+        }}
+        .header {{
             background: #1a73e8;
             color: white;
             padding: 20px;
             text-align: center;
-        }
-        .header h1 { margin: 0; font-size: 1.5rem; }
-        .header .course-code { font-size: 0.8rem; opacity: 0.9; margin-top: 5px; }
-        .scope-badge {
+        }}
+        .header h1 {{ margin: 0; font-size: 1.5rem; }}
+        .header .course-code {{ font-size: 0.8rem; opacity: 0.9; margin-top: 5px; }}
+        .scope-badge {{
             text-align: center;
             font-size: 11px;
             background: #e8f5e9;
@@ -242,57 +242,57 @@ html_template = """
             padding: 5px;
             margin: 10px;
             border-radius: 20px;
-        }
-        #chat {
+        }}
+        #chat {{
             height: 400px;
             overflow-y: auto;
             padding: 15px;
             background: #f8f9fa;
-        }
-        .message {
+        }}
+        .message {{
             margin-bottom: 12px;
             padding: 8px 12px;
             border-radius: 18px;
             max-width: 85%;
             word-wrap: break-word;
-        }
-        .user {
+        }}
+        .user {{
             background: #1a73e8;
             color: white;
             margin-left: auto;
             text-align: right;
             border-bottom-right-radius: 4px;
-        }
-        .assistant {
+        }}
+        .assistant {{
             background: #e9ecef;
             color: #333;
             margin-right: auto;
             border-bottom-left-radius: 4px;
-        }
-        .system {
+        }}
+        .system {{
             background: #fff3cd;
             color: #856404;
             text-align: center;
             font-style: italic;
             margin: 10px auto;
             max-width: 90%;
-        }
-        .input-area {
+        }}
+        .input-area {{
             display: flex;
             padding: 15px;
             gap: 10px;
             border-top: 1px solid #e0e0e0;
             background: white;
-        }
-        input {
+        }}
+        input {{
             flex: 1;
             padding: 12px;
             border: 1px solid #ddd;
             border-radius: 24px;
             font-size: 16px;
             outline: none;
-        }
-        button {
+        }}
+        button {{
             padding: 12px 24px;
             background: #1a73e8;
             color: white;
@@ -300,27 +300,27 @@ html_template = """
             border-radius: 24px;
             font-size: 16px;
             cursor: pointer;
-        }
-        button:hover { background: #1557b0; }
-        .footer {
+        }}
+        button:hover {{ background: #1557b0; }}
+        .footer {{
             text-align: center;
             padding: 15px;
             font-size: 11px;
             color: rgba(255,255,255,0.7);
-        }
+        }}
     </style>
 </head>
 <body>
     <div class="chat-container">
         <div class="header">
-            <h1>🎓 {{ course_code }} {{ course_name }}</h1>
-            <div class="course-code">👨‍🏫 {{ instructor_name }} | 🤖 Tutor: ndetos</div>
+            <h1>🎓 {course_code} {course_name}</h1>
+            <div class="course-code">👨‍🏫 {instructor_name} | 🤖 Tutor: ndetos</div>
         </div>
         <div class="scope-badge">
             📚 I answer questions based on YOUR course materials
         </div>
         <div id="chat">
-            <div class="message system">{{ greeting }}</div>
+            <div class="message system">{greeting}</div>
         </div>
         <div class="input-area">
             <input type="text" id="question" placeholder="Ask about your course..." autofocus>
@@ -333,20 +333,20 @@ html_template = """
 
     <script>
         let loading = false;
-        function escapeHtml(text) {
+        function escapeHtml(text) {{
             let div = document.createElement('div');
             div.textContent = text;
-            return div.innerHTML.replace(/\\n/g, '<br>');
-        }
-        function addMessage(text, type) {
+            return div.innerHTML.replace(/\\\\n/g, '<br>');
+        }}
+        function addMessage(text, type) {{
             let chat = document.getElementById('chat');
             let div = document.createElement('div');
             div.className = 'message ' + type;
             div.innerHTML = (type === 'user' ? '👤 ' : (type === 'assistant' ? '🤖 ' : '')) + escapeHtml(text);
             chat.appendChild(div);
             chat.scrollTop = chat.scrollHeight;
-        }
-        function addLoading() {
+        }}
+        function addLoading() {{
             let chat = document.getElementById('chat');
             let div = document.createElement('div');
             div.id = 'loading';
@@ -354,12 +354,12 @@ html_template = """
             div.innerHTML = '🤖 ndetos is thinking...';
             chat.appendChild(div);
             chat.scrollTop = chat.scrollHeight;
-        }
-        function removeLoading() {
+        }}
+        function removeLoading() {{
             let loading = document.getElementById('loading');
             if (loading) loading.remove();
-        }
-        async function ask() {
+        }}
+        async function ask() {{
             if (loading) return;
             let input = document.getElementById('question');
             let question = input.value.trim();
@@ -368,37 +368,45 @@ html_template = """
             input.value = '';
             addLoading();
             loading = true;
-            try {
-                let response = await fetch('/ask', {
+            try {{
+                let response = await fetch('/ask', {{
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: question })
-                });
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ question: question }})
+                }});
                 let data = await response.json();
                 removeLoading();
-                if (data.error) {
+                if (data.error) {{
                     addMessage('Error: ' + data.error, 'system');
-                } else {
+                }} else {{
                     addMessage(data.answer, 'assistant');
-                }
-            } catch (err) {
+                }}
+            }} catch (err) {{
                 removeLoading();
                 addMessage('Connection error: ' + err.message, 'system');
-            }
+            }}
             loading = false;
             input.focus();
-        }
-        document.getElementById('question').addEventListener('keypress', function(e) {
+        }}
+        document.getElementById('question').addEventListener('keypress', function(e) {{
             if (e.key === 'Enter') ask();
-        });
+        }});
         document.getElementById('question').focus();
     </script>
 </body>
 </html>
 """
 
+# Format the HTML with the course details
+html_final = html_template.format(
+    course_code=course_code,
+    course_name=course_name,
+    instructor_name=instructor_name,
+    greeting=f"Welcome to {course_code} {course_name}! I am ndetos, your AI tutor."
+)
+
 # ============================================================
-# Build the complete ndetos_sim.py content (using the fixed approach)
+# Build the complete ndetos_sim.py content
 # ============================================================
 ndetos_sim_content = f'''#!/usr/bin/env python3
 """
@@ -410,7 +418,7 @@ import re
 import pickle
 from pathlib import Path
 import requests
-from flask import Flask, render_template_string, request, jsonify
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
@@ -512,16 +520,16 @@ class CourseKnowledgeBase:
 knowledge = CourseKnowledgeBase()
 
 # ============================================================
+# HTML (pre-rendered)
+# ============================================================
+HTML = """{html_final}"""
+
+# ============================================================
 # FLASK ROUTES
 # ============================================================
 @app.route('/')
 def index():
-    return render_template_string('''{html_template}''',
-        course_code=course_code,
-        course_name=course_name,
-        instructor_name=instructor_name,
-        greeting=COURSE_CONFIG['greeting']
-    )
+    return HTML
 
 @app.route('/ask', methods=['POST'])
 def ask():
@@ -595,7 +603,6 @@ else
     python3 -m py_compile ndetos_sim.py
     exit 1
 fi
-
 # ============================================================
 # STEP 6: Get Host IP
 # ============================================================
