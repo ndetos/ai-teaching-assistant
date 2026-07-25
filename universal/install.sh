@@ -201,7 +201,7 @@ instructor_name = os.environ.get('INSTRUCTOR_NAME', '')
 institution_name = os.environ.get('INSTITUTION_NAME', '')
 
 # ============================================================
-# HTML TEMPLATE (using triple quotes, no f-string)
+# HTML TEMPLATE (as a plain string, not f-string)
 # ============================================================
 html_template = """
 <!DOCTYPE html>
@@ -532,7 +532,7 @@ def add_security_headers(response):
 
 @app.route('/')
 def index():
-    html = """{html_template}"""
+    html = \'\'\'{html_template}\'\'\'
     return render_template_string(html)
 
 @app.route('/ask', methods=['POST'])
