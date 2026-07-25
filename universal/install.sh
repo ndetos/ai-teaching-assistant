@@ -201,7 +201,7 @@ instructor_name = os.environ.get('INSTRUCTOR_NAME', '')
 institution_name = os.environ.get('INSTITUTION_NAME', '')
 
 # ============================================================
-# HTML TEMPLATE (as a plain string, not f-string)
+# HTML TEMPLATE (as a plain string)
 # ============================================================
 html_template = """
 <!DOCTYPE html>
@@ -397,11 +397,11 @@ html_template = """
 """
 
 # ============================================================
-# Build the complete ndetos_sim.py content
+# Build the complete ndetos_sim.py content using string concatenation
 # ============================================================
-ndetos_sim_content = f'''#!/usr/bin/env python3
+base_content = '''#!/usr/bin/env python3
 """
-Universal AI Teaching Assistant - Customized for {course_code}
+Universal AI Teaching Assistant - Customized for ''' + course_code + '''
 """
 
 import os
@@ -422,7 +422,7 @@ app = Flask(__name__)
 # TECHNICAL CONFIGURATION
 # ============================================================
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "ollama")
-OLLAMA_URL = f"http://{{OLLAMA_HOST}}:11434/api/generate"
+OLLAMA_URL = f"http://{OLLAMA_HOST}:11434/api/generate"
 MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b")
 
 # Knowledge base paths
@@ -441,20 +441,20 @@ for path in KB_PATHS:
 # ============================================================
 # COURSE CONFIGURATION
 # ============================================================
-COURSE_CONFIG = {{
+COURSE_CONFIG = {
     "tutor_name": "ndetos",
-    "tutor_full_name": "AI Tutor by {instructor_name}",
-    "course_code": "{course_code}",
-    "course_name": "{course_name}",
-    "instructor": "{instructor_name}",
-    "institution": "{institution_name}",
-    "greeting": "Welcome to {course_code} {course_name}! I am ndetos, your AI tutor.",
-    "system_prompt": r"""You are ndetos, the AI tutor for {course_code} {course_name} at {institution_name}, created by {instructor_name}.
+    "tutor_full_name": "AI Tutor by ''' + instructor_name + '''",
+    "course_code": "''' + course_code + '''",
+    "course_name": "''' + course_name + '''",
+    "instructor": "''' + instructor_name + '''",
+    "institution": "''' + institution_name + '''",
+    "greeting": "Welcome to ''' + course_code + ''' ''' + course_name + '''! I am ndetos, your AI tutor.",
+    "system_prompt": r"""You are ndetos, the AI tutor for ''' + course_code + ''' ''' + course_name + ''' at ''' + institution_name + ''', created by ''' + instructor_name + '''.
 
 **CRITICAL INSTRUCTION: You must ONLY answer questions based on the provided course materials.**
 
 **YOUR PURPOSE:**
-1. Answer questions about {course_name} using ONLY the course materials provided
+1. Answer questions about ''' + course_name + ''' using ONLY the course materials provided
 2. Help with course logistics (assignments, deadlines, lab instructions)
 3. Assist with environment setup and tooling (uv, pip, Jupyter, Docker)
 4. Provide programming help related to this course
@@ -474,7 +474,7 @@ COURSE_CONFIG = {{
 - Do NOT speculate about content not in the provided materials
 
 **Remember: You are a teaching assistant, not a general AI. Your knowledge is LIMITED to the course materials provided."""
-}}
+}
 
 # ============================================================
 # RAG KNOWLEDGE BASE
@@ -491,18 +491,18 @@ class CourseKnowledgeBase:
                     data = pickle.load(f)
                 if isinstance(data, dict) and 'chunks' in data:
                     self.knowledge_base = data.get('chunks', [])
-                    print(f"📚 Loaded {{len(self.knowledge_base)}} chunks")
+                    print(f"📚 Loaded {len(self.knowledge_base)} chunks")
                 else:
                     self.knowledge_base = data
-                    print(f"📚 Loaded {{len(self.knowledge_base)}} items")
+                    print(f"📚 Loaded {len(self.knowledge_base)} items")
             except Exception as e:
-                print(f"⚠️ Could not load knowledge base: {{e}}")
+                print(f"⚠️ Could not load knowledge base: {e}")
 
     def search(self, question, max_results=3):
         if not self.knowledge_base:
             return ""
         question_lower = question.lower()
-        keywords = [w for w in re.findall(r'\\b\\w{{3,}}\\b', question_lower) 
+        keywords = [w for w in re.findall(r'\\b\\w{3,}\\b', question_lower) 
                    if w not in ['what', 'how', 'why', 'when', 'where', 'which', 'the', 'a', 'an', 'and', 'or', 'but']]
         scored = []
         for item in self.knowledge_base:
@@ -515,7 +515,7 @@ class CourseKnowledgeBase:
                     scored.append((score, content))
         scored.sort(key=lambda x: -x[0])
         if scored:
-            return "\\n---\\n".join([f"[From your course materials]\\n{{c[:1000]}}" for _, c in scored[:max_results]])
+            return "\\n---\\n".join([f"[From your course materials]\\n{c[:1000]}" for _, c in scored[:max_results]])
         return ""
 
 knowledge = CourseKnowledgeBase()
@@ -532,7 +532,7 @@ def add_security_headers(response):
 
 @app.route('/')
 def index():
-    html = \'\'\'{html_template}\'\'\'
+    html = """''' + html_template + '''"""
     return render_template_string(html)
 
 @app.route('/ask', methods=['POST'])
@@ -568,29 +568,29 @@ INSTRUCTIONS:
         return jsonify({'answer': "I don't have that in my course materials. Please check your notes or ask your instructor."})
 
     try:
-        response = requests.post(OLLAMA_URL, json={{
+        response = requests.post(OLLAMA_URL, json={
             "model": MODEL,
             "prompt": prompt,
             "stream": False,
             "temperature": 0.2,
             "num_predict": 512
-        }}, timeout=90)
+        }, timeout=90)
         if response.status_code == 200:
             answer = response.json().get("response", "No response generated.")
             return jsonify({'answer': answer})
         else:
-            return jsonify({'error': f"Ollama error: HTTP {{response.status_code}}"})
+            return jsonify({'error': f"Ollama error: HTTP {response.status_code}"})
     except Exception as e:
         return jsonify({'error': str(e)})
 
 if __name__ == '__main__':
     student_url = os.getenv("STUDENT_URL", "http://localhost:5004")
     print("\\n" + "=" * 60)
-    print(f"🎓 {{COURSE_CONFIG['course_code']}} - {{COURSE_CONFIG['course_name']}}")
+    print(f"🎓 {COURSE_CONFIG['course_code']} - {COURSE_CONFIG['course_name']}")
     print("=" * 60)
-    print(f"🤖 Tutor: {{COURSE_CONFIG['tutor_name']}}")
-    print(f"📚 Knowledge base: {{len(knowledge.knowledge_base)}} items")
-    print(f"\\n🌐 STUDENTS CONNECT TO: {{student_url}}")
+    print(f"🤖 Tutor: {COURSE_CONFIG['tutor_name']}")
+    print(f"📚 Knowledge base: {len(knowledge.knowledge_base)} items")
+    print(f"\\n🌐 STUDENTS CONNECT TO: {student_url}")
     print("\\n⏹️  Press Ctrl+C to stop")
     print("=" * 60 + "\\n")
     app.run(host='0.0.0.0', port=5004, debug=False, threaded=True)
@@ -598,7 +598,7 @@ if __name__ == '__main__':
 
 # Write the generated file
 with open('ndetos_sim.py', 'w') as f:
-    f.write(ndetos_sim_content)
+    f.write(base_content)
 
 print("✅ Customized ndetos_sim.py created")
 EOF
