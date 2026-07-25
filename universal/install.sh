@@ -1,9 +1,14 @@
 #!/bin/bash
-# ndetos AI Teaching Assistant - Universal One-Command Installer (Slim)
+# ndetos AI Teaching Assistant - Universal One-Command Installer
 # ============================================================
 set -e
 
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
 print_status() { echo -e "${BLUE}➜${NC} $1"; }
 print_success() { echo -e "${GREEN}✅${NC} $1"; }
 print_error() { echo -e "${RED}❌${NC} $1"; }
@@ -16,15 +21,20 @@ echo "=========================================="
 # Detect OS
 OS="$(uname -s 2>/dev/null || echo "Windows")"
 case "${OS}" in
-    Linux*) OS_TYPE="Linux";;
-    Darwin*) OS_TYPE="macOS";;
+    Linux*)     OS_TYPE="Linux";;
+    Darwin*)    OS_TYPE="macOS";;
     CYGWIN*|MINGW*|MSYS*) OS_TYPE="Windows";;
-    *) [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "$WSLENV" ]] && OS_TYPE="Windows" || OS_TYPE="UNKNOWN";;
+    *)          
+        if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "$WSLENV" ]]; then
+            OS_TYPE="Windows"
+        else
+            OS_TYPE="UNKNOWN"
+        fi
+        ;;
 esac
-grep -qi microsoft /proc/version 2>/dev/null && IS_WSL=true || IS_WSL=false
 
-# Home directory
-[[ "$OS_TYPE" == "Windows" ]] && AI_DIR="$USERPROFILE/ai-tutor" || AI_DIR="$HOME/ai-tutor"
+IS_WSL=false
+grep -qi microsoft /proc/version 2>/dev/null && IS_WSL=true
 
 # ============================================================
 # STEP 1: Docker Installation
@@ -33,32 +43,106 @@ print_status "Checking system requirements..."
 
 if ! command -v docker &> /dev/null; then
     print_status "Installing Docker (this may take a moment)..."
+    
     case "$OS_TYPE" in
-        Linux) curl -fsSL https://get.docker.com | sh; sudo usermod -aG docker $USER; print_info "Please log out and back in, then run this script again"; exit 0 ;;
-        macOS) brew install --cask docker 2>/dev/null || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; print_info "Start Docker Desktop and run this script again"; exit 0 ;;
-        Windows) print_info "Please install Docker Desktop from https://docker.com"; print_info "Enable WSL 2 integration"; read -p "Press Enter after installing Docker..."; exit 0 ;;
-        *) print_error "Please install Docker from https://docker.com"; exit 1 ;;
+        Linux)
+            curl -fsSL https://get.docker.com | sh
+            if $IS_WSL; then
+                sudo usermod -aG docker $USER
+                print_info "WSL: Please restart your WSL terminal, then run this script again"
+            else
+                sudo usermod -aG docker $USER
+                print_info "Please log out and back in, then run this script again"
+            fi
+            exit 0
+            ;;
+        macOS)
+            if ! command -v brew &> /dev/null; then
+                /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            fi
+            brew install --cask docker
+            echo ""
+            print_info "To start Docker Desktop on macOS:"
+            echo "   1. Open Finder → Applications → Docker.app"
+            echo "   2. Or click the Docker icon in Launchpad"
+            echo "   3. Wait for the Docker whale icon to appear in menu bar"
+            echo ""
+            print_info "Once Docker is running, run this script again"
+            exit 0
+            ;;
+        Windows)
+            powershell.exe -Command "
+                \$installer = '\$env:TEMP\docker-installer.exe';
+                Invoke-WebRequest -Uri 'https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe' -OutFile \$installer;
+                Start-Process -FilePath \$installer -ArgumentList 'install', '--quiet' -Wait;
+            " 2>/dev/null
+            echo ""
+            print_info "To complete Docker Desktop setup on Windows:"
+            echo "   1. Docker Desktop installer will open - follow the wizard"
+            echo "   2. IMPORTANT: Check 'Use WSL 2 instead of Hyper-V' when prompted"
+            echo "   3. Restart your computer when installation completes"
+            echo "   4. After restart, launch Docker Desktop from Start Menu"
+            echo "   5. Wait for the Docker whale icon in system tray to stop animating"
+            echo ""
+            print_info "Once Docker is running, run this script again"
+            exit 0
+            ;;
+        *)
+            print_error "Please install Docker from https://docker.com"
+            exit 1
+            ;;
     esac
 fi
 
 if ! docker info &> /dev/null; then
-    print_info "Please start Docker and run this script again"
-    [[ "$OS_TYPE" == "Linux" ]] && echo "   sudo systemctl start docker"
-    [[ "$OS_TYPE" == "macOS" || "$OS_TYPE" == "Windows" ]] && echo "   Open Docker Desktop"
-    exit 0
+    case "$OS_TYPE" in
+        Linux)
+            if $IS_WSL; then
+                echo ""
+                print_info "To start Docker in WSL:"
+                echo "   sudo service docker start"
+                echo "   # Or: sudo systemctl start docker"
+                echo ""
+                print_info "Once Docker is running, run this script again"
+            else
+                echo ""
+                print_info "To start Docker on Linux:"
+                echo "   sudo systemctl start docker"
+                echo "   # Or: sudo service docker start"
+                echo ""
+                print_info "Once Docker is running, run this script again"
+            fi
+            exit 0
+            ;;
+        macOS|Windows)
+            echo ""
+            print_info "Please start Docker Desktop and run this script again"
+            exit 0
+            ;;
+    esac
 fi
 
 # ============================================================
 # STEP 2: Setup Directory
 # ============================================================
+if [[ "$OS_TYPE" == "Windows" ]]; then
+    AI_DIR="$USERPROFILE/ai-tutor"
+else
+    AI_DIR="$HOME/ai-tutor"
+fi
+
 mkdir -p "$AI_DIR"
 cd "$AI_DIR"
 
 # ============================================================
-# STEP 3: Download Files
+# STEP 3: Download Configuration Files
 # ============================================================
 print_status "Downloading AI Tutor configuration..."
+
+# Download docker-compose.yml
 curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/docker-compose.yml -o docker-compose.yml
+
+# Download index_course.py
 curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/index_course.py -o index_course.py
 
 # ============================================================
@@ -70,160 +154,453 @@ echo "📚 Course Customization"
 echo "=========================================="
 echo ""
 
+# Read directly from terminal (works with curl | bash)
 exec 3< /dev/tty
+
+# Get course information
 read -p "Enter your course code (e.g., CIT 4104): " COURSE_CODE < /dev/tty
 read -p "Enter your course name (e.g., Modeling and Simulation): " COURSE_NAME < /dev/tty
 read -p "Enter your full name (as students will see it): " INSTRUCTOR_NAME < /dev/tty
 read -p "Enter your institution name: " INSTITUTION_NAME < /dev/tty
-mkdir -p "$AI_DIR/course-materials"
+
+# Create course materials folder
+mkdir -p ~/ai-tutor/course-materials
+
 echo ""
-print_info "Please copy your course materials into: $AI_DIR/course-materials/"
+print_info "Please copy your course materials into: ~/ai-tutor/course-materials/"
 print_info "  - Lecture slides (PPT, PDF, PPTX)"
 print_info "  - Lecture notes (DOC, DOCX, TXT, MD)"
 print_info "  - Textbook chapters (PDF)"
+print_info "  - Any other course materials"
+echo ""
 read -p "Press Enter when you have copied your materials..." < /dev/tty
-exec < /dev/stdin
 
 # ============================================================
 # STEP 5: Generate Custom ndetos_sim.py
 # ============================================================
 print_status "🔧 Creating your personalized AI Tutor..."
-if [ -d "ndetos_sim.py" ]; then rm -rf ndetos_sim.py; fi
 
-# Write the Python file using a heredoc with proper escaping
-python3 << 'EOF' > ndetos_sim.py
-#!/usr/bin/env python3
-import os, re, pickle, requests
+# SAFETY CHECK: Ensure ndetos_sim.py is not a directory
+if [ -d "ndetos_sim.py" ]; then
+    print_info "🗑️ Removing existing directory named ndetos_sim.py..."
+    rm -rf ndetos_sim.py
+fi
+
+# Export variables so Python can access them
+export COURSE_CODE
+export COURSE_NAME
+export INSTRUCTOR_NAME
+export INSTITUTION_NAME
+
+python3 << 'EOF'
+import os
+
+# Get variables from environment
+course_code = os.environ.get('COURSE_CODE', '')
+course_name = os.environ.get('COURSE_NAME', '')
+instructor_name = os.environ.get('INSTRUCTOR_NAME', '')
+institution_name = os.environ.get('INSTITUTION_NAME', '')
+
+# ============================================================
+# HTML TEMPLATE
+# ============================================================
+html_template = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{course_code} - {course_name} AI Tutor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * {{ box-sizing: border-box; }}
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+        }}
+        .chat-container {{
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }}
+        .header {{
+            background: #1a73e8;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }}
+        .header h1 {{ margin: 0; font-size: 1.5rem; }}
+        .header .course-code {{ font-size: 0.8rem; opacity: 0.9; margin-top: 5px; }}
+        .scope-badge {{
+            text-align: center;
+            font-size: 11px;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 5px;
+            margin: 10px;
+            border-radius: 20px;
+        }}
+        #chat {{
+            height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f8f9fa;
+        }}
+        .message {{
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            border-radius: 18px;
+            max-width: 85%;
+            word-wrap: break-word;
+        }}
+        .user {{
+            background: #1a73e8;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+            border-bottom-right-radius: 4px;
+        }}
+        .assistant {{
+            background: #e9ecef;
+            color: #333;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }}
+        .system {{
+            background: #fff3cd;
+            color: #856404;
+            text-align: center;
+            font-style: italic;
+            margin: 10px auto;
+            max-width: 90%;
+        }}
+        .input-area {{
+            display: flex;
+            padding: 15px;
+            gap: 10px;
+            border-top: 1px solid #e0e0e0;
+            background: white;
+        }}
+        input {{
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 24px;
+            font-size: 16px;
+            outline: none;
+        }}
+        button {{
+            padding: 12px 24px;
+            background: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 24px;
+            font-size: 16px;
+            cursor: pointer;
+        }}
+        button:hover {{ background: #1557b0; }}
+        .footer {{
+            text-align: center;
+            padding: 15px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+        }}
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">
+            <h1>🎓 {course_code} {course_name}</h1>
+            <div class="course-code">👨🏫 {instructor_name} | 🤖 Tutor: ndetos</div>
+        </div>
+        <div class="scope-badge">
+            📚 I answer questions based on YOUR course materials
+        </div>
+        <div id="chat">
+            <div class="message system">{greeting}</div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="question" placeholder="Ask about your course..." autofocus>
+            <button onclick="ask()">Send</button>
+        </div>
+    </div>
+    <div class="footer">
+        💡 Questions are answered using YOUR course materials only
+    </div>
+
+    <script>
+        let loading = false;
+        function escapeHtml(text) {{
+            let div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\\\\n/g, '<br>');
+        }}
+        function addMessage(text, type) {{
+            let chat = document.getElementById('chat');
+            let div = document.createElement('div');
+            div.className = 'message ' + type;
+            div.innerHTML = (type === 'user' ? '👤 ' : (type === 'assistant' ? '🤖 ' : '')) + escapeHtml(text);
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }}
+        function addLoading() {{
+            let chat = document.getElementById('chat');
+            let div = document.createElement('div');
+            div.id = 'loading';
+            div.className = 'message assistant loading';
+            div.innerHTML = '🤖 ndetos is thinking...';
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }}
+        function removeLoading() {{
+            let loading = document.getElementById('loading');
+            if (loading) loading.remove();
+        }}
+        async function ask() {{
+            if (loading) return;
+            let input = document.getElementById('question');
+            let question = input.value.trim();
+            if (!question) return;
+            addMessage(question, 'user');
+            input.value = '';
+            addLoading();
+            loading = true;
+            try {{
+                let response = await fetch('/ask', {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ question: question }})
+                }});
+                let data = await response.json();
+                removeLoading();
+                if (data.error) {{
+                    addMessage('Error: ' + data.error, 'system');
+                }} else {{
+                    addMessage(data.answer, 'assistant');
+                }}
+            }} catch (err) {{
+                removeLoading();
+                addMessage('Connection error: ' + err.message, 'system');
+            }}
+            loading = false;
+            input.focus();
+        }}
+        document.getElementById('question').addEventListener('keypress', function(e) {{
+            if (e.key === 'Enter') ask();
+        }});
+        document.getElementById('question').focus();
+    </script>
+</body>
+</html>
+"""
+
+# Format the HTML with the course details
+html_final = html_template.format(
+    course_code=course_code,
+    course_name=course_name,
+    instructor_name=instructor_name,
+    greeting=f"Welcome to {course_code} {course_name}! I am ndetos, your AI tutor."
+)
+
+# ============================================================
+# Build the complete ndetos_sim.py content
+# ============================================================
+ndetos_sim_content = f'''#!/usr/bin/env python3
+"""
+Universal AI Teaching Assistant - Customized for {course_code}
+"""
+
+import os
+import re
+import pickle
 from pathlib import Path
+import requests
 from flask import Flask, request, jsonify
+
 app = Flask(__name__)
 
+# ============================================================
+# TECHNICAL CONFIGURATION
+# ============================================================
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "ollama")
-OLLAMA_URL = f"http://{OLLAMA_HOST}:11434/api/generate"
+OLLAMA_URL = f"http://{{OLLAMA_HOST}}:11434/api/generate"
 MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b")
 
-# Course configuration - will be replaced by install.sh
-COURSE_CONFIG = {
-    "tutor_name": "ndetos",
-    "tutor_full_name": "AI Tutor",
-    "course_code": "Your Course",
-    "course_name": "Your Course",
-    "instructor": "Your Instructor",
-    "institution": "Your Institution",
-    "greeting": "Welcome! I am ndetos, your AI tutor.",
-    "system_prompt": "You are ndetos, the AI tutor. Answer questions based ONLY on course materials."
-}
+# ============================================================
+# COURSE CONFIGURATION
+# ============================================================
+course_code = "{course_code}"
+course_name = "{course_name}"
+instructor_name = "{instructor_name}"
+institution_name = "{institution_name}"
 
-class KnowledgeBase:
+COURSE_CONFIG = {{
+    "tutor_name": "ndetos",
+    "tutor_full_name": "AI Tutor by {instructor_name}",
+    "course_code": course_code,
+    "course_name": course_name,
+    "instructor": instructor_name,
+    "institution": institution_name,
+    "greeting": "Welcome to {{course_code}} {{course_name}}! I am ndetos, your AI tutor.",
+    "system_prompt": f"""You are ndetos, the AI tutor for {{course_code}} {{course_name}} at {{institution_name}}, created by {{instructor_name}}.
+
+**CRITICAL INSTRUCTION: You must ONLY answer questions based on the provided course materials.**
+
+**YOUR PURPOSE:**
+1. Answer questions about {{course_name}} using ONLY the course materials provided
+2. Help with course logistics (assignments, deadlines, lab instructions)
+3. Assist with environment setup and tooling (uv, pip, Jupyter, Docker)
+4. Provide programming help related to this course
+
+**STRICT RULES - FOLLOW EXACTLY:**
+- ALWAYS base your answer on the "Course material from your notes" section provided
+- If the answer is in the materials, cite it: "According to your Week X materials..."
+- If the answer is NOT in the materials, say: "I don't have that in my course materials. Please check your notes or ask your instructor."
+- NEVER provide complete assignment solutions - only hints and guidance
+- Keep answers educational and concise (2-3 paragraphs)
+- Reference the specific week/source when answering
+
+**ABSOLUTELY FORBIDDEN:**
+- Do NOT use external knowledge or general internet information
+- Do NOT answer questions about topics outside the course
+- Do NOT provide complete code solutions for assignments
+- Do NOT speculate about content not in the provided materials
+
+**Remember: You are a teaching assistant, not a general AI. Your knowledge is LIMITED to the course materials provided."""
+}}
+
+# ============================================================
+# KNOWLEDGE BASE
+# ============================================================
+class CourseKnowledgeBase:
     def __init__(self):
-        self.kb = []
-        self.load()
-    def load(self):
-        for p in [Path("/app/knowledge/knowledge_base.pkl"), Path("/app/knowledge_base.pkl")]:
-            if p.exists():
-                try:
-                    with open(p, 'rb') as f:
-                        d = pickle.load(f)
-                    self.kb = d.get('chunks', []) if isinstance(d, dict) and 'chunks' in d else d if isinstance(d, list) else []
-                    print(f"📚 Loaded {len(self.kb)} chunks")
-                    return
-                except:
-                    pass
-        print("📚 No knowledge base found")
-    def search(self, q, n=3):
-        if not self.kb:
+        self.knowledge_base = []
+        self.load_knowledge_base()
+
+    def load_knowledge_base(self):
+        kb_path = Path("/app/knowledge/knowledge_base.pkl")
+        if kb_path.exists():
+            try:
+                with open(kb_path, 'rb') as f:
+                    data = pickle.load(f)
+                if isinstance(data, dict) and 'chunks' in data:
+                    self.knowledge_base = data.get('chunks', [])
+                    print(f"📚 Loaded {{len(self.knowledge_base)}} chunks")
+                else:
+                    self.knowledge_base = data if isinstance(data, list) else []
+                    print(f"📚 Loaded {{len(self.knowledge_base)}} items")
+            except Exception as e:
+                print(f"⚠️ Could not load knowledge base: {{e}}")
+        else:
+            print("📚 No knowledge base found at /app/knowledge/knowledge_base.pkl")
+
+    def search(self, question, max_results=3):
+        if not self.knowledge_base:
             return ""
-        ql = q.lower()
-        kw = [w for w in re.findall(r'\b\w{3,}\b', ql) if w not in ['what','how','why','when','where','which','the','a','an','and','or','but']]
+        question_lower = question.lower()
+        keywords = [w for w in re.findall(r'\\b\\w{{3,}}\\b', question_lower) 
+                   if w not in ['what', 'how', 'why', 'when', 'where', 'which', 'the', 'a', 'an', 'and', 'or', 'but']]
         scored = []
-        for item in self.kb:
-            c = item if isinstance(item, str) else item.get('content', '')
+        for item in self.knowledge_base:
+            content = item if isinstance(item, str) else item.get('content', '')
             if isinstance(item, dict):
-                c = item.get('content', '')
-            if c and isinstance(c, str):
-                s = sum(1 for k in kw if k in c.lower())
-                if s > 0:
-                    scored.append((s, c))
+                content = item.get('content', '')
+            if content and isinstance(content, str):
+                score = sum(1 for kw in keywords if kw in content.lower())
+                if score > 0:
+                    scored.append((score, content))
         scored.sort(key=lambda x: -x[0])
         if scored:
-            return "\n---\n".join([f"[From your course materials]\n{c[:1000]}" for _, c in scored[:n]])
+            return "\\n---\\n".join([f"[From your course materials]\\n{{c[:1000]}}" for _, c in scored[:max_results]])
         return ""
 
-knowledge = KnowledgeBase()
+knowledge = CourseKnowledgeBase()
 
-HTML = '''<!DOCTYPE html>
-<html><head><title>AI Tutor</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>*{box-sizing:border-box;}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);min-height:100vh;}.chat-container{background:white;border-radius:20px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1);}.header{background:#1a73e8;color:white;padding:20px;text-align:center;}.header h1{margin:0;font-size:1.5rem;}.scope-badge{text-align:center;font-size:11px;background:#e8f5e9;color:#2e7d32;padding:5px;margin:10px;border-radius:20px;}#chat{height:400px;overflow-y:auto;padding:15px;background:#f8f9fa;}.message{margin-bottom:12px;padding:8px 12px;border-radius:18px;max-width:85%;word-wrap:break-word;}.user{background:#1a73e8;color:white;margin-left:auto;text-align:right;border-bottom-right-radius:4px;}.assistant{background:#e9ecef;color:#333;margin-right:auto;border-bottom-left-radius:4px;}.system{background:#fff3cd;color:#856404;text-align:center;font-style:italic;margin:10px auto;max-width:90%;}.input-area{display:flex;padding:15px;gap:10px;border-top:1px solid #e0e0e0;background:white;}input{flex:1;padding:12px;border:1px solid #ddd;border-radius:24px;font-size:16px;outline:none;}button{padding:12px 24px;background:#1a73e8;color:white;border:none;border-radius:24px;font-size:16px;cursor:pointer;}button:hover{background:#1557b0;}.footer{text-align:center;padding:15px;font-size:11px;color:rgba(255,255,255,0.7);}</style>
-</head><body>
-<div class="chat-container"><div class="header"><h1>🎓 AI Tutor</h1><div class="scope-badge">👨🏫 AI Tutor</div></div>
-<div id="chat"><div class="message system">Welcome to the AI Tutor!</div></div>
-<div class="input-area"><input type="text" id="question" placeholder="Ask about your course..." autofocus><button onclick="ask()">Send</button></div></div>
-<div class="footer">💡 Questions are answered using YOUR course materials only</div>
-<script>
-let loading=false;
-function escapeHtml(t){let d=document.createElement("div");d.textContent=t;return d.innerHTML.replace(/\\n/g,"<br>");}
-function addMessage(t,type){let c=document.getElementById("chat");let d=document.createElement("div");d.className="message "+type;d.innerHTML=(type==="user"?"👤 ":(type==="assistant"?"🤖 ":""))+escapeHtml(t);c.appendChild(d);c.scrollTop=c.scrollHeight;}
-function addLoading(){let c=document.getElementById("chat");let d=document.createElement("div");d.id="loading";d.className="message assistant loading";d.innerHTML="🤖 ndetos is thinking...";c.appendChild(d);c.scrollTop=c.scrollHeight;}
-function removeLoading(){let l=document.getElementById("loading");if(l)l.remove();}
-async function ask(){if(loading)return;let i=document.getElementById("question");let q=i.value.trim();if(!q)return;addMessage(q,"user");i.value="";addLoading();loading=true;try{let r=await fetch("/ask",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q})});let d=await r.json();removeLoading();if(d.error)addMessage("Error: "+d.error,"system");else addMessage(d.answer,"assistant");}catch(err){removeLoading();addMessage("Connection error: "+err.message,"system");}loading=false;i.focus();}
-document.getElementById("question").addEventListener("keypress",function(e){if(e.key==="Enter")ask();});document.getElementById("question").focus();
-</script>
-</body></html>'''
+# ============================================================
+# HTML (pre-rendered)
+# ============================================================
+HTML = """{html_final}"""
 
+# ============================================================
+# FLASK ROUTES
+# ============================================================
 @app.route('/')
 def index():
     return HTML
 
 @app.route('/ask', methods=['POST'])
 def ask():
-    d = request.get_json()
-    if not d or not d.get('question'):
-        return jsonify({'error': 'Invalid request'})
-    q = d['question'].strip()
-    ctx = knowledge.search(q)
-    if ctx:
-        p = f"{COURSE_CONFIG['system_prompt']}\n\nCourse material:\n{ctx}\n\nQuestion: {q}\n\nAnswer based ONLY on course materials."
-        try:
-            r = requests.post(OLLAMA_URL, json={"model": MODEL, "prompt": p, "stream": False, "temperature": 0.2, "num_predict": 512}, timeout=90)
-            if r.status_code == 200:
-                return jsonify({'answer': r.json().get('response', 'No response')})
-            else:
-                return jsonify({'error': f"Error: {r.status_code}"})
-        except Exception as e:
-            return jsonify({'error': str(e)})
-    return jsonify({'answer': "I don't have that in my course materials. Please check your notes or ask your instructor."})
+    data = request.get_json()
+    if not data:
+        return jsonify({{'error': 'Invalid request format.'}})
+    question = data.get('question', '').strip()
+    if not question:
+        return jsonify({{'error': 'Please enter a valid question.'}})
 
+    print(f"\\n📝 Question: {{question[:80]}}...")
+
+    course_context = knowledge.search(question)
+    if course_context:
+        prompt = f"""{{COURSE_CONFIG['system_prompt']}}
+
+Course material from your notes:
+{{course_context}}
+
+Student question: {{question}}
+
+Answer based ONLY on the course material above. If you don't know, say so.
+{{COURSE_CONFIG['tutor_name']}}:"""
+    else:
+        return jsonify({{'answer': "I don't have that in my course materials. Please check your notes or ask your instructor."}})
+
+    try:
+        response = requests.post(OLLAMA_URL, json={{
+            "model": MODEL,
+            "prompt": prompt,
+            "stream": False,
+            "temperature": 0.2,
+            "num_predict": 512
+        }}, timeout=90)
+        if response.status_code == 200:
+            answer = response.json().get("response", "No response generated.")
+            return jsonify({{'answer': answer}})
+        else:
+            return jsonify({{'error': f"Ollama error: HTTP {{response.status_code}}"}})
+    except Exception as e:
+        return jsonify({{'error': str(e)}})
+
+# ============================================================
+# STARTUP
+# ============================================================
 if __name__ == '__main__':
-    print("\n" + "=" * 60)
-    print(f"🎓 {COURSE_CONFIG['course_code']} - {COURSE_CONFIG['course_name']}")
+    student_url = os.getenv("STUDENT_URL", "http://localhost:5004")
+    print("\\n" + "=" * 60)
+    print(f"🎓 {{COURSE_CONFIG['course_code']}} - {{COURSE_CONFIG['course_name']}}")
     print("=" * 60)
-    print(f"🤖 Tutor: {COURSE_CONFIG['tutor_name']}")
-    print(f"📚 Knowledge base: {len(knowledge.kb)} items")
-    print(f"\n🌐 STUDENTS CONNECT TO: {os.getenv('STUDENT_URL', 'http://localhost:5004')}")
-    print("\n⏹️  Press Ctrl+C to stop")
-    print("=" * 60 + "\n")
+    print(f"🤖 Tutor: {{COURSE_CONFIG['tutor_name']}}")
+    print(f"📚 Knowledge base: {{len(knowledge.knowledge_base)}} items")
+    print(f"\\n🌐 STUDENTS CONNECT TO: {{student_url}}")
+    print("\\n⏹️  Press Ctrl+C to stop")
+    print("=" * 60 + "\\n")
     app.run(host='0.0.0.0', port=5004, debug=False, threaded=True)
+'''
+
+# Write the generated file
+with open('ndetos_sim.py', 'w') as f:
+    f.write(ndetos_sim_content)
+
+print("✅ Customized ndetos_sim.py created")
 EOF
 
-# Now replace the COURSE_CONFIG with the actual values
-sed -i "s/\"course_code\": \"Your Course\"/\"course_code\": \"$COURSE_CODE\"/" ndetos_sim.py
-sed -i "s/\"course_name\": \"Your Course\"/\"course_name\": \"$COURSE_NAME\"/" ndetos_sim.py
-sed -i "s/\"instructor\": \"Your Instructor\"/\"instructor\": \"$INSTRUCTOR_NAME\"/" ndetos_sim.py
-sed -i "s/\"institution\": \"Your Institution\"/\"institution\": \"$INSTITUTION_NAME\"/" ndetos_sim.py
-sed -i "s/\"greeting\": \"Welcome! I am ndetos, your AI tutor.\"/\"greeting\": \"Welcome to $COURSE_CODE $COURSE_NAME! I am ndetos, your AI tutor.\"/" ndetos_sim.py
-sed -i "s/\"system_prompt\": \"You are ndetos, the AI tutor. Answer questions based ONLY on course materials.\"/\"system_prompt\": \"You are ndetos, the AI tutor for $COURSE_NAME. Answer questions based ONLY on course materials.\"/" ndetos_sim.py
-
-# Update the HTML title and header
-sed -i "s/<title>AI Tutor<\/title>/<title>$COURSE_CODE - $COURSE_NAME AI Tutor<\/title>/" ndetos_sim.py
-sed -i "s/<h1>🎓 AI Tutor<\/h1>/<h1>🎓 $COURSE_CODE $COURSE_NAME<\/h1>/" ndetos_sim.py
-sed -i "s/<div class=\"scope-badge\">👨🏫 AI Tutor<\/div>/<div class=\"scope-badge\">👨🏫 $INSTRUCTOR_NAME | 🤖 Tutor: ndetos<\/div>/" ndetos_sim.py
-
-# Validate
+# Validate the generated Python file
 if python3 -m py_compile ndetos_sim.py 2>/dev/null; then
-    print_success "✅ ndetos_sim.py syntax valid"
+    print_success "✅ ndetos_sim.py syntax is valid"
 else
-    print_error "❌ Syntax error"
+    print_error "❌ ndetos_sim.py has syntax errors. Showing the error:"
+    python3 -m py_compile ndetos_sim.py
     exit 1
 fi
 
@@ -238,36 +615,68 @@ else
     [ -z "$HOST_IP" ] && HOST_IP=$(ifconfig 2>/dev/null | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
 fi
 [ -z "$HOST_IP" ] && HOST_IP="localhost"
+
 export STUDENT_URL="http://$HOST_IP:5004"
 
 # ============================================================
 # STEP 7: Start Docker Containers
 # ============================================================
 print_status "🚀 Starting your personalized AI Tutor..."
+
+# Run docker compose up with visible output
 docker compose up -d
-[ $? -eq 0 ] && print_success "✅ Containers started successfully" || { print_error "❌ Failed to start containers"; exit 1; }
+
+# Check if it succeeded
+if [ $? -eq 0 ]; then
+    print_success "✅ Containers started successfully"
+else
+    print_error "❌ Failed to start containers"
+    exit 1
+fi
 
 # ============================================================
-# STEP 8: Index Course Materials
+# STEP 8: Index Course Materials (INSIDE DOCKER)
 # ============================================================
 print_status "🔍 Indexing your course materials (this may take a few minutes)..."
+
+# Wait for container to be fully ready
 sleep 5
-mkdir -p "$AI_DIR/knowledge"
+
+# Create a writable temp directory in the container
 docker exec ai-tutor mkdir -p /tmp/indexing
-docker cp "$AI_DIR/course-materials/." ai-tutor:/tmp/indexing/course-materials/ 2>/dev/null || docker cp course-materials/. ai-tutor:/tmp/indexing/course-materials/
+
+# Copy course materials from host to container's temp dir
+docker cp ~/ai-tutor/course-materials/. ai-tutor:/tmp/indexing/course-materials/
+
+# Copy the index_course.py script to the container
 docker cp index_course.py ai-tutor:/tmp/indexing/
+
+# Run the indexing inside the container
 docker exec ai-tutor python3 /tmp/indexing/index_course.py /tmp/indexing/course-materials/ -o /tmp/indexing/knowledge_base.pkl
-docker cp ai-tutor:/tmp/indexing/knowledge_base.pkl "$AI_DIR/knowledge/knowledge_base.pkl"
+
+# Remove any existing knowledge_base.pkl (file or directory) on the host
+if [ -e ~/ai-tutor/knowledge_base.pkl ]; then
+    print_info "🗑️ Removing existing knowledge_base.pkl..."
+    rm -rf ~/ai-tutor/knowledge_base.pkl
+fi
+
+# Copy the generated knowledge base back to the host
+docker cp ai-tutor:/tmp/indexing/knowledge_base.pkl ~/ai-tutor/knowledge_base.pkl
+
+# Clean up temp files in container
 docker exec ai-tutor rm -rf /tmp/indexing
+
 print_success "✅ Course indexed successfully!"
 
 # ============================================================
 # STEP 9: Pull AI Model
 # ============================================================
 print_status "Downloading the AI model (3.2GB - may take 5-15 minutes)..."
+
 docker exec ollama-server ollama pull qwen2.5:1.5b 2>&1 | while IFS= read -r line; do
     if [[ $line =~ ([0-9]+)% ]]; then
-        printf "\r   %3d%% complete" "${BASH_REMATCH[1]}"
+        percent=${BASH_REMATCH[1]}
+        printf "\r   %3d%% complete" "$percent"
     fi
 done
 echo ""
@@ -277,6 +686,7 @@ echo ""
 # ============================================================
 print_status "Verifying installation..."
 sleep 5
+
 if curl -s -o /dev/null -w "%{http_code}" "http://localhost:5004" | grep -q "200\|302\|301"; then
     print_success "AI Tutor is running!"
 else
@@ -284,14 +694,50 @@ else
 fi
 
 # ============================================================
-# STEP 11: Restart and Finalize
+# STEP 11: Restart ai-tutor container to load new configuration
 # ============================================================
 print_status "Restarting ai-tutor to load your course configuration..."
 docker restart ai-tutor
 sleep 5
 
 # ============================================================
-# STEP 12: Done
+# STEP 12: Create Desktop Shortcuts
+# ============================================================
+if [[ "$OS_TYPE" == "Linux" ]] && [ -d "$HOME/Desktop" ]; then
+    cat > "$HOME/Desktop/ai-tutor.desktop" << EOF
+[Desktop Entry]
+Name=AI Tutor - $COURSE_CODE
+Comment=$COURSE_NAME
+Exec=gnome-terminal -- bash -c "cd $AI_DIR && docker compose up; exec bash"
+Icon=utilities-terminal
+Terminal=false
+Type=Application
+Categories=Education;
+EOF
+    chmod +x "$HOME/Desktop/ai-tutor.desktop" 2>/dev/null
+fi
+
+if [[ "$OS_TYPE" == "Windows" ]]; then
+    cat > "$USERPROFILE/Desktop/start-ai-tutor.bat" << EOF
+@echo off
+echo Starting $COURSE_CODE AI Tutor...
+cd /d "%USERPROFILE%\ai-tutor"
+docker compose up
+pause
+EOF
+fi
+
+# Create stop script
+cat > "$AI_DIR/stop.sh" << 'EOF'
+#!/bin/bash
+cd "$(dirname "$0")"
+docker compose down 2>/dev/null
+echo "✅ ndetos stopped"
+EOF
+chmod +x "$AI_DIR/stop.sh" 2>/dev/null
+
+# ============================================================
+# STEP 13: Done - WITH CORRECT VARIABLES
 # ============================================================
 echo ""
 echo "=========================================="
