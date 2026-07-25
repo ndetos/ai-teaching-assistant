@@ -653,7 +653,7 @@ docker cp index_course.py ai-tutor:/tmp/indexing/
 # Run the indexing inside the container (using writable temp dir)
 docker exec ai-tutor python3 /tmp/indexing/index_course.py /tmp/indexing/course-materials/ -o /tmp/indexing/knowledge_base.pkl
 
-# Copy the generated knowledge base back to the host
+# Copy the generated knowledge base back to the host (overwrite if exists)
 docker cp ai-tutor:/tmp/indexing/knowledge_base.pkl ~/ai-tutor/knowledge_base.pkl
 
 # Clean up temp files in container
