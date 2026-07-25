@@ -174,8 +174,9 @@ print_info "  - Textbook chapters (PDF)"
 print_info "  - Any other course materials"
 echo ""
 read -p "Press Enter when you have copied your materials..." < /dev/tty
+
 # ============================================================
-# STEP 5: Generate Custom ndetos_sim.py (FROM SCRATCH - NO TEMPLATE)
+# STEP 5: Generate Custom ndetos_sim.py (USING CORRECT TEMPLATING)
 # ============================================================
 print_status "🔧 Creating your personalized AI Tutor..."
 
@@ -201,13 +202,13 @@ instructor_name = os.environ.get('INSTRUCTOR_NAME', '')
 institution_name = os.environ.get('INSTITUTION_NAME', '')
 
 # ============================================================
-# HTML TEMPLATE (as a plain string)
+# HTML TEMPLATE (using Jinja2 style for Flask's render_template_string)
 # ============================================================
 html_template = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{COURSE_CONFIG['course_code']}} - {{COURSE_CONFIG['course_name']}} AI Tutor</title>
+    <title>{{ course_code }} - {{ course_name }} AI Tutor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         * { box-sizing: border-box; }
@@ -312,14 +313,14 @@ html_template = """
 <body>
     <div class="chat-container">
         <div class="header">
-            <h1>🎓 {{COURSE_CONFIG['course_code']}} {{COURSE_CONFIG['course_name']}}</h1>
-            <div class="course-code">👨🏫 {{COURSE_CONFIG['instructor']}} | 🤖 Tutor: {{COURSE_CONFIG['tutor_name']}}</div>
+            <h1>🎓 {{ course_code }} {{ course_name }}</h1>
+            <div class="course-code">👨‍🏫 {{ instructor_name }} | 🤖 Tutor: ndetos</div>
         </div>
         <div class="scope-badge">
             📚 I answer questions based on YOUR course materials
         </div>
         <div id="chat">
-            <div class="message system">{{COURSE_CONFIG['greeting']}}</div>
+            <div class="message system">{{ greeting }}</div>
         </div>
         <div class="input-area">
             <input type="text" id="question" placeholder="Ask about your course..." autofocus>
@@ -397,22 +398,17 @@ html_template = """
 """
 
 # ============================================================
-# Build the complete ndetos_sim.py content using string concatenation
+# Build the complete ndetos_sim.py content (using the fixed approach)
 # ============================================================
-base_content = '''#!/usr/bin/env python3
+ndetos_sim_content = f'''#!/usr/bin/env python3
 """
-Universal AI Teaching Assistant - Customized for ''' + course_code + '''
+Universal AI Teaching Assistant - Customized for {course_code}
 """
 
 import os
 import re
 import pickle
-import socket
-import subprocess
-from collections import defaultdict
-from datetime import datetime
 from pathlib import Path
-
 import requests
 from flask import Flask, render_template_string, request, jsonify
 
@@ -422,39 +418,31 @@ app = Flask(__name__)
 # TECHNICAL CONFIGURATION
 # ============================================================
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "ollama")
-OLLAMA_URL = f"http://{OLLAMA_HOST}:11434/api/generate"
+OLLAMA_URL = f"http://{{OLLAMA_HOST}}:11434/api/generate"
 MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b")
-
-# Knowledge base paths
-KB_PATHS = [
-    Path("/app/knowledge/knowledge_base.pkl"),
-    Path("/app/knowledge_base_default.pkl"),
-    Path(__file__).parent / "knowledge_base.pkl",
-]
-
-KNOWLEDGE_BASE_FILE = None
-for path in KB_PATHS:
-    if path.exists():
-        KNOWLEDGE_BASE_FILE = path
-        break
 
 # ============================================================
 # COURSE CONFIGURATION
 # ============================================================
-COURSE_CONFIG = {
+course_code = "{course_code}"
+course_name = "{course_name}"
+instructor_name = "{instructor_name}"
+institution_name = "{institution_name}"
+
+COURSE_CONFIG = {{
     "tutor_name": "ndetos",
-    "tutor_full_name": "AI Tutor by ''' + instructor_name + '''",
-    "course_code": "''' + course_code + '''",
-    "course_name": "''' + course_name + '''",
-    "instructor": "''' + instructor_name + '''",
-    "institution": "''' + institution_name + '''",
-    "greeting": "Welcome to ''' + course_code + ''' ''' + course_name + '''! I am ndetos, your AI tutor.",
-    "system_prompt": r"""You are ndetos, the AI tutor for ''' + course_code + ''' ''' + course_name + ''' at ''' + institution_name + ''', created by ''' + instructor_name + '''.
+    "tutor_full_name": "AI Tutor by {instructor_name}",
+    "course_code": course_code,
+    "course_name": course_name,
+    "instructor": instructor_name,
+    "institution": institution_name,
+    "greeting": "Welcome to {{course_code}} {{course_name}}! I am ndetos, your AI tutor.",
+    "system_prompt": f"""You are ndetos, the AI tutor for {{course_code}} {{course_name}} at {{institution_name}}, created by {{instructor_name}}.
 
 **CRITICAL INSTRUCTION: You must ONLY answer questions based on the provided course materials.**
 
 **YOUR PURPOSE:**
-1. Answer questions about ''' + course_name + ''' using ONLY the course materials provided
+1. Answer questions about {{course_name}} using ONLY the course materials provided
 2. Help with course logistics (assignments, deadlines, lab instructions)
 3. Assist with environment setup and tooling (uv, pip, Jupyter, Docker)
 4. Provide programming help related to this course
@@ -474,123 +462,119 @@ COURSE_CONFIG = {
 - Do NOT speculate about content not in the provided materials
 
 **Remember: You are a teaching assistant, not a general AI. Your knowledge is LIMITED to the course materials provided."""
-}
+}}
 
 # ============================================================
-# RAG KNOWLEDGE BASE
+# KNOWLEDGE BASE
 # ============================================================
 class CourseKnowledgeBase:
     def __init__(self):
         self.knowledge_base = []
         self.load_knowledge_base()
-
+    
     def load_knowledge_base(self):
-        if KNOWLEDGE_BASE_FILE and KNOWLEDGE_BASE_FILE.exists():
+        kb_path = Path("/app/knowledge/knowledge_base.pkl")
+        if kb_path.exists():
             try:
-                with open(KNOWLEDGE_BASE_FILE, 'rb') as f:
+                with open(kb_path, 'rb') as f:
                     data = pickle.load(f)
                 if isinstance(data, dict) and 'chunks' in data:
                     self.knowledge_base = data.get('chunks', [])
-                    print(f"📚 Loaded {len(self.knowledge_base)} chunks")
+                    print(f"📚 Loaded {{len(self.knowledge_base)}} chunks")
                 else:
-                    self.knowledge_base = data
-                    print(f"📚 Loaded {len(self.knowledge_base)} items")
+                    self.knowledge_base = data if isinstance(data, list) else []
+                    print(f"📚 Loaded {{len(self.knowledge_base)}} items")
             except Exception as e:
-                print(f"⚠️ Could not load knowledge base: {e}")
-
+                print(f"⚠️ Could not load knowledge base: {{e}}")
+        else:
+            print("📚 No knowledge base found at /app/knowledge/knowledge_base.pkl")
+    
     def search(self, question, max_results=3):
         if not self.knowledge_base:
             return ""
         question_lower = question.lower()
-        keywords = [w for w in re.findall(r'\\b\\w{3,}\\b', question_lower) 
+        keywords = [w for w in re.findall(r'\\b\\w{{3,}}\\b', question_lower) 
                    if w not in ['what', 'how', 'why', 'when', 'where', 'which', 'the', 'a', 'an', 'and', 'or', 'but']]
         scored = []
         for item in self.knowledge_base:
             content = item if isinstance(item, str) else item.get('content', '')
             if isinstance(item, dict):
                 content = item.get('content', '')
-            if content:
+            if content and isinstance(content, str):
                 score = sum(1 for kw in keywords if kw in content.lower())
                 if score > 0:
                     scored.append((score, content))
         scored.sort(key=lambda x: -x[0])
         if scored:
-            return "\\n---\\n".join([f"[From your course materials]\\n{c[:1000]}" for _, c in scored[:max_results]])
+            return "\\n---\\n".join([f"[From your course materials]\\n{{c[:1000]}}" for _, c in scored[:max_results]])
         return ""
 
 knowledge = CourseKnowledgeBase()
 
 # ============================================================
-# FLASK APP
+# FLASK ROUTES
 # ============================================================
-@app.after_request
-def add_security_headers(response):
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    return response
-
 @app.route('/')
 def index():
-    html = """''' + html_template + '''"""
-    return render_template_string(html)
+    return render_template_string('''{html_template}''',
+        course_code=course_code,
+        course_name=course_name,
+        instructor_name=instructor_name,
+        greeting=COURSE_CONFIG['greeting']
+    )
 
 @app.route('/ask', methods=['POST'])
 def ask():
     data = request.get_json()
     if not data:
-        return jsonify({'error': 'Invalid request format.'})
+        return jsonify({{'error': 'Invalid request format.'}})
     question = data.get('question', '').strip()
     if not question:
-        return jsonify({'error': 'Please enter a valid question.'})
-
-    print(f"\\n📝 Question: {question[:80]}...")
-
-    # Search course materials
+        return jsonify({{'error': 'Please enter a valid question.'}})
+    
+    print(f"\\n📝 Question: {{question[:80]}}...")
+    
     course_context = knowledge.search(question)
-
     if course_context:
-        prompt = f"""{COURSE_CONFIG['system_prompt']}
+        prompt = f"""{{COURSE_CONFIG['system_prompt']}}
 
 Course material from your notes:
-{course_context}
+{{course_context}}
 
-Student question: {question}
+Student question: {{question}}
 
-INSTRUCTIONS:
-1. Base your answer ONLY on the course material above
-2. Reference the specific week/source
-3. If the material doesn't fully answer, say: "I don't have that in my course materials."
-4. Give hints, not complete solutions
-
-{COURSE_CONFIG['tutor_name']}:"""
+Answer based ONLY on the course material above. If you don't know, say so.
+{{COURSE_CONFIG['tutor_name']}}:"""
     else:
-        return jsonify({'answer': "I don't have that in my course materials. Please check your notes or ask your instructor."})
-
+        return jsonify({{'answer': "I don't have that in my course materials. Please check your notes or ask your instructor."}})
+    
     try:
-        response = requests.post(OLLAMA_URL, json={
+        response = requests.post(OLLAMA_URL, json={{
             "model": MODEL,
             "prompt": prompt,
             "stream": False,
             "temperature": 0.2,
             "num_predict": 512
-        }, timeout=90)
+        }}, timeout=90)
         if response.status_code == 200:
             answer = response.json().get("response", "No response generated.")
-            return jsonify({'answer': answer})
+            return jsonify({{'answer': answer}})
         else:
-            return jsonify({'error': f"Ollama error: HTTP {response.status_code}"})
+            return jsonify({{'error': f"Ollama error: HTTP {{response.status_code}}"}})
     except Exception as e:
-        return jsonify({'error': str(e)})
+        return jsonify({{'error': str(e)}})
 
+# ============================================================
+# STARTUP
+# ============================================================
 if __name__ == '__main__':
     student_url = os.getenv("STUDENT_URL", "http://localhost:5004")
     print("\\n" + "=" * 60)
-    print(f"🎓 {COURSE_CONFIG['course_code']} - {COURSE_CONFIG['course_name']}")
+    print(f"🎓 {{COURSE_CONFIG['course_code']}} - {{COURSE_CONFIG['course_name']}}")
     print("=" * 60)
-    print(f"🤖 Tutor: {COURSE_CONFIG['tutor_name']}")
-    print(f"📚 Knowledge base: {len(knowledge.knowledge_base)} items")
-    print(f"\\n🌐 STUDENTS CONNECT TO: {student_url}")
+    print(f"🤖 Tutor: {{COURSE_CONFIG['tutor_name']}}")
+    print(f"📚 Knowledge base: {{len(knowledge.knowledge_base)}} items")
+    print(f"\\n🌐 STUDENTS CONNECT TO: {{student_url}}")
     print("\\n⏹️  Press Ctrl+C to stop")
     print("=" * 60 + "\\n")
     app.run(host='0.0.0.0', port=5004, debug=False, threaded=True)
@@ -598,7 +582,7 @@ if __name__ == '__main__':
 
 # Write the generated file
 with open('ndetos_sim.py', 'w') as f:
-    f.write(base_content)
+    f.write(ndetos_sim_content)
 
 print("✅ Customized ndetos_sim.py created")
 EOF
@@ -611,6 +595,7 @@ else
     python3 -m py_compile ndetos_sim.py
     exit 1
 fi
+
 # ============================================================
 # STEP 6: Get Host IP
 # ============================================================
