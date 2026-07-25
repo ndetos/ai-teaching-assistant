@@ -653,8 +653,9 @@ docker cp index_course.py ai-tutor:/tmp/indexing/
 # Run the indexing inside the container
 docker exec ai-tutor python3 /tmp/indexing/index_course.py /tmp/indexing/course-materials/ -o /tmp/indexing/knowledge_base.pkl
 
-# Remove any existing knowledge_base.pkl (file or directory) on the host
-rm -rf ~/ai-tutor/knowledge_base.pkl
+# --- CRITICAL FIX: Ensure the destination is NOT a directory ---
+# Force remove ANYTHING at the destination (file OR directory)
+sudo rm -rf ~/ai-tutor/knowledge_base.pkl
 
 # Copy the generated knowledge base back to the host
 docker cp ai-tutor:/tmp/indexing/knowledge_base.pkl ~/ai-tutor/knowledge_base.pkl
