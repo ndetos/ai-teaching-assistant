@@ -200,8 +200,10 @@ course_name = os.environ.get('COURSE_NAME', '')
 instructor_name = os.environ.get('INSTRUCTOR_NAME', '')
 institution_name = os.environ.get('INSTITUTION_NAME', '')
 
-# Define the HTML content as a separate string to avoid f-string issues
-html_template = '''
+# ============================================================
+# HTML TEMPLATE (stored as a raw string to avoid f-string issues)
+# ============================================================
+html_template = r'''
 <!DOCTYPE html>
 <html>
 <head>
@@ -394,7 +396,9 @@ html_template = '''
 </html>
 '''
 
-# Create the entire ndetos_sim.py file from scratch
+# ============================================================
+# Build the complete ndetos_sim.py content
+# ============================================================
 ndetos_sim_content = f'''#!/usr/bin/env python3
 """
 Universal AI Teaching Assistant - Customized for {course_code}
@@ -528,7 +532,7 @@ def add_security_headers(response):
 
 @app.route('/')
 def index():
-    html = f"""''' + html_template + '''"""
+    html = f'''{html_template}'''
     return render_template_string(html)
 
 @app.route('/ask', methods=['POST'])
