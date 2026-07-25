@@ -1,5 +1,5 @@
 #!/bin/bash
-# ndetos AI Teaching Assistant - Universal One-Command Installer
+# ndetos AI Teaching Assistant - One-Command Installer
 # ============================================================
 set -e
 
@@ -139,10 +139,7 @@ cd "$AI_DIR"
 # ============================================================
 print_status "Downloading AI Tutor configuration..."
 
-# Download docker-compose.yml
 curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/docker-compose.yml -o docker-compose.yml
-
-# Download index_course.py
 curl -fsSL https://raw.githubusercontent.com/ndetos/ai-teaching-assistant/master/universal/index_course.py -o index_course.py
 
 # ============================================================
@@ -154,16 +151,12 @@ echo "📚 Course Customization"
 echo "=========================================="
 echo ""
 
-# Read directly from terminal (works with curl | bash)
 exec 3< /dev/tty
-
-# Get course information
 read -p "Enter your course code (e.g., CIT 4104): " COURSE_CODE < /dev/tty
 read -p "Enter your course name (e.g., Modeling and Simulation): " COURSE_NAME < /dev/tty
 read -p "Enter your full name (as students will see it): " INSTRUCTOR_NAME < /dev/tty
 read -p "Enter your institution name: " INSTITUTION_NAME < /dev/tty
 
-# Create course materials folder
 mkdir -p ~/ai-tutor/course-materials
 
 echo ""
@@ -174,19 +167,17 @@ print_info "  - Textbook chapters (PDF)"
 print_info "  - Any other course materials"
 echo ""
 read -p "Press Enter when you have copied your materials..." < /dev/tty
+exec < /dev/stdin
 
 # ============================================================
 # STEP 5: Generate Custom ndetos_sim.py
 # ============================================================
 print_status "🔧 Creating your personalized AI Tutor..."
 
-# SAFETY CHECK: Ensure ndetos_sim.py is not a directory
 if [ -d "ndetos_sim.py" ]; then
-    print_info "🗑️ Removing existing directory named ndetos_sim.py..."
     rm -rf ndetos_sim.py
 fi
 
-# Export variables so Python can access them
 export COURSE_CODE
 export COURSE_NAME
 export INSTRUCTOR_NAME
@@ -195,15 +186,11 @@ export INSTITUTION_NAME
 python3 << 'EOF'
 import os
 
-# Get variables from environment
 course_code = os.environ.get('COURSE_CODE', '')
 course_name = os.environ.get('COURSE_NAME', '')
 instructor_name = os.environ.get('INSTRUCTOR_NAME', '')
 institution_name = os.environ.get('INSTITUTION_NAME', '')
 
-# ============================================================
-# HTML TEMPLATE
-# ============================================================
 html_template = """
 <!DOCTYPE html>
 <html>
@@ -397,7 +384,6 @@ html_template = """
 </html>
 """
 
-# Format the HTML with the course details
 html_final = html_template.format(
     course_code=course_code,
     course_name=course_name,
@@ -405,9 +391,6 @@ html_final = html_template.format(
     greeting=f"Welcome to {course_code} {course_name}! I am ndetos, your AI tutor."
 )
 
-# ============================================================
-# Build the complete ndetos_sim.py content
-# ============================================================
 ndetos_sim_content = f'''#!/usr/bin/env python3
 """
 Universal AI Teaching Assistant - Customized for {course_code}
@@ -422,16 +405,10 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# ============================================================
-# TECHNICAL CONFIGURATION
-# ============================================================
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "ollama")
 OLLAMA_URL = f"http://{{OLLAMA_HOST}}:11434/api/generate"
 MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b")
 
-# ============================================================
-# COURSE CONFIGURATION
-# ============================================================
 course_code = "{course_code}"
 course_name = "{course_name}"
 instructor_name = "{instructor_name}"
@@ -472,16 +449,12 @@ COURSE_CONFIG = {{
 **Remember: You are a teaching assistant, not a general AI. Your knowledge is LIMITED to the course materials provided."""
 }}
 
-# ============================================================
-# KNOWLEDGE BASE (FIXED: Now loads from the correct mount path)
-# ============================================================
 class CourseKnowledgeBase:
     def __init__(self):
         self.knowledge_base = []
         self.load_knowledge_base()
 
     def load_knowledge_base(self):
-        # Check both possible paths
         kb_paths = [
             Path("/app/knowledge/knowledge_base.pkl"),
             Path("/app/knowledge_base.pkl"),
@@ -501,17 +474,14 @@ class CourseKnowledgeBase:
                     data = pickle.load(f)
                 if isinstance(data, dict) and 'chunks' in data:
                     self.knowledge_base = data.get('chunks', [])
-                    print(f"📚 Loaded {{len(self.knowledge_base)}} chunks from {{kb_path}}")
+                    print(f"📚 Loaded {{len(self.knowledge_base)}} chunks")
                 elif isinstance(data, list):
                     self.knowledge_base = data
-                    print(f"📚 Loaded {{len(self.knowledge_base)}} items from {{kb_path}}")
-                else:
-                    print(f"📚 Unknown data format from {{kb_path}}")
+                    print(f"📚 Loaded {{len(self.knowledge_base)}} items")
             except Exception as e:
                 print(f"⚠️ Could not load knowledge base: {{e}}")
         else:
-            print("📚 No knowledge base found at any expected path.")
-            print("   Checked: " + ", ".join(str(p) for p in kb_paths))
+            print("📚 No knowledge base found")
 
     def search(self, question, max_results=3):
         if not self.knowledge_base:
@@ -535,14 +505,8 @@ class CourseKnowledgeBase:
 
 knowledge = CourseKnowledgeBase()
 
-# ============================================================
-# HTML (pre-rendered)
-# ============================================================
 HTML = """{html_final}"""
 
-# ============================================================
-# FLASK ROUTES
-# ============================================================
 @app.route('/')
 def index():
     return HTML
@@ -588,9 +552,6 @@ Answer based ONLY on the course material above. If you don't know, say so.
     except Exception as e:
         return jsonify({{'error': str(e)}})
 
-# ============================================================
-# STARTUP
-# ============================================================
 if __name__ == '__main__':
     student_url = os.getenv("STUDENT_URL", "http://localhost:5004")
     print("\\n" + "=" * 60)
@@ -604,18 +565,16 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5004, debug=False, threaded=True)
 '''
 
-# Write the generated file
 with open('ndetos_sim.py', 'w') as f:
     f.write(ndetos_sim_content)
 
 print("✅ Customized ndetos_sim.py created")
 EOF
 
-# Validate the generated Python file
 if python3 -m py_compile ndetos_sim.py 2>/dev/null; then
     print_success "✅ ndetos_sim.py syntax is valid"
 else
-    print_error "❌ ndetos_sim.py has syntax errors. Showing the error:"
+    print_error "❌ ndetos_sim.py has syntax errors"
     python3 -m py_compile ndetos_sim.py
     exit 1
 fi
@@ -631,64 +590,65 @@ else
     [ -z "$HOST_IP" ] && HOST_IP=$(ifconfig 2>/dev/null | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
 fi
 [ -z "$HOST_IP" ] && HOST_IP="localhost"
-
 export STUDENT_URL="http://$HOST_IP:5004"
 
 # ============================================================
-# STEP 7: Start Docker Containers
+# STEP 7: Start Docker Containers (CLEAN OUTPUT)
 # ============================================================
-print_status "🚀 Starting your personalized AI Tutor..."
+print_status "🚀 Starting up ndetosAI..."
 
-# Run docker compose up with visible output
-docker compose up -d
+# Start containers with suppressed output
+docker compose up -d > /dev/null 2>&1 &
 
-# Check if it succeeded
+# Show spinner while waiting
+pid=$!
+spin_chars='|/-\'
+i=0
+while kill -0 $pid 2>/dev/null; do
+    i=$(( (i+1) % 4 ))
+    printf "\r   [${spin_chars:$i:1}] %d seconds" $((i+1))
+    sleep 1
+done
+
+# Check result
+wait $pid 2>/dev/null
 if [ $? -eq 0 ]; then
-    print_success "✅ Containers started successfully"
+    printf "\r   ✅ Started successfully\n"
 else
-    print_error "❌ Failed to start containers"
+    printf "\r   ❌ Failed to start\n"
+    docker compose up -d
     exit 1
 fi
 
 # ============================================================
-# STEP 8: Index Course Materials (INSIDE DOCKER - FINAL FIX)
+# STEP 8: Index Course Materials
 # ============================================================
 print_status "🔍 Indexing your course materials (this may take a few minutes)..."
 
-# Wait for container to be fully ready
 sleep 5
-
-# Create a writable temp directory in the container
-docker exec ai-tutor mkdir -p /tmp/indexing
-
-# Create the knowledge directory on the host
 mkdir -p ~/ai-tutor/knowledge
 chmod 755 ~/ai-tutor/knowledge
 
-# Copy course materials from host to container temp dir
+docker exec ai-tutor mkdir -p /tmp/indexing
 docker cp ~/ai-tutor/course-materials/. ai-tutor:/tmp/indexing/course-materials/
-
-# Copy the index_course.py script to the container
 docker cp index_course.py ai-tutor:/tmp/indexing/
 
-# Run the indexing inside the container
-docker exec ai-tutor python3 /tmp/indexing/index_course.py /tmp/indexing/course-materials/ -o /tmp/indexing/knowledge_base.pkl
+# Run indexing and hide warnings
+docker exec ai-tutor python3 /tmp/indexing/index_course.py /tmp/indexing/course-materials/ -o /tmp/indexing/knowledge_base.pkl 2>&1 | grep -v "Warning: You are sending unauthenticated requests" | grep -v "all-MiniLM-L6-v2"
 
-# Copy the generated knowledge base to the host's knowledge directory
 docker cp ai-tutor:/tmp/indexing/knowledge_base.pkl ~/ai-tutor/knowledge/knowledge_base.pkl
-
-# Clean up temp files in container
 docker exec ai-tutor rm -rf /tmp/indexing
 
-print_success "✅ Course indexed successfully!"
+print_success "✅ Course materials indexed"
+
+# ============================================================
 # STEP 9: Pull AI Model
 # ============================================================
-print_status "Downloading the AI model (3.2GB - may take 5-15 minutes)..."
+print_status "Downloading AI model (3.2GB - may take 5-15 minutes)..."
 
 docker exec ollama-server ollama pull qwen2.5:1.5b 2>&1 | while IFS= read -r line; do
     if [[ $line =~ ([0-9]+)% ]]; then
-        percent=${BASH_REMATCH[1]}
-        printf "\r   %3d%% complete" "$percent"
+        printf "\r   %3d%% complete" "${BASH_REMATCH[1]}"
     fi
 done
 echo ""
@@ -706,14 +666,15 @@ else
 fi
 
 # ============================================================
-# STEP 11: Restart ai-tutor container to load new configuration
+# STEP 11: Restart
 # ============================================================
-print_status "Restarting ai-tutor to load your course configuration..."
-docker restart ai-tutor
+print_status "Restarting to load your course configuration..."
+docker restart ai-tutor > /dev/null 2>&1
 sleep 5
+print_success "Ready!"
 
 # ============================================================
-# STEP 12: Create Desktop Shortcuts
+# STEP 12: Create Shortcuts
 # ============================================================
 if [[ "$OS_TYPE" == "Linux" ]] && [ -d "$HOME/Desktop" ]; then
     cat > "$HOME/Desktop/ai-tutor.desktop" << EOF
@@ -729,17 +690,6 @@ EOF
     chmod +x "$HOME/Desktop/ai-tutor.desktop" 2>/dev/null
 fi
 
-if [[ "$OS_TYPE" == "Windows" ]]; then
-    cat > "$USERPROFILE/Desktop/start-ai-tutor.bat" << EOF
-@echo off
-echo Starting $COURSE_CODE AI Tutor...
-cd /d "%USERPROFILE%\ai-tutor"
-docker compose up
-pause
-EOF
-fi
-
-# Create stop script
 cat > "$AI_DIR/stop.sh" << 'EOF'
 #!/bin/bash
 cd "$(dirname "$0")"
@@ -749,7 +699,7 @@ EOF
 chmod +x "$AI_DIR/stop.sh" 2>/dev/null
 
 # ============================================================
-# STEP 13: Done - WITH CORRECT VARIABLES
+# STEP 13: Done
 # ============================================================
 echo ""
 echo "=========================================="
