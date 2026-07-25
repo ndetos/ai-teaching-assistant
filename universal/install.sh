@@ -653,16 +653,11 @@ docker cp index_course.py ai-tutor:/tmp/indexing/
 # Run the indexing inside the container
 docker exec ai-tutor python3 /tmp/indexing/index_course.py /tmp/indexing/course-materials/ -o /tmp/indexing/knowledge_base.pkl
 
-# Verify the file exists in the container
-if docker exec ai-tutor test -f /tmp/indexing/knowledge_base.pkl; then
-    echo "   ✅ Knowledge base generated in container"
-else
-    echo "   ❌ Knowledge base not found in container"
-    exit 1
-fi
+# Remove any existing knowledge_base.pkl (file or directory) on the host
+rm -rf ~/ai-tutor/knowledge_base.pkl
 
 # Copy the generated knowledge base back to the host
-docker cp ai-tutor:/tmp/indexing/knowledge_base.pkl /home/wandeto/ai-tutor/knowledge_base.pkl
+docker cp ai-tutor:/tmp/indexing/knowledge_base.pkl ~/ai-tutor/knowledge_base.pkl
 
 # Clean up temp files in container
 docker exec ai-tutor rm -rf /tmp/indexing
