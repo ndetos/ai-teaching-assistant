@@ -663,6 +663,7 @@ docker exec ai-tutor mkdir -p /tmp/indexing
 
 # Create the knowledge directory on the host
 mkdir -p ~/ai-tutor/knowledge
+chmod 755 ~/ai-tutor/knowledge
 
 # Copy course materials from host to container temp dir
 docker cp ~/ai-tutor/course-materials/. ai-tutor:/tmp/indexing/course-materials/
