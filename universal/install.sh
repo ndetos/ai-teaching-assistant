@@ -644,7 +644,7 @@ sleep 5
 # Create a writable temp directory in the container
 docker exec ai-tutor mkdir -p /tmp/indexing
 
-# Copy course materials from host to container's temp dir
+# Copy course materials from host to container temp dir
 docker cp ~/ai-tutor/course-materials/. ai-tutor:/tmp/indexing/course-materials/
 
 # Copy the index_course.py script to the container
