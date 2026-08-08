@@ -578,31 +578,34 @@ fi
 export STUDENT_URL="http://$HOST_IP:5004"
 
 # ============================================================
-# STEP 7: Start Docker Containers (CLEAN OUTPUT)
+# STEP 7: Start Docker Containers (WITH ERROR HANDLING)
 # ============================================================
 print_status "🚀 Starting up ndetosAI..."
 
-# Start containers with suppressed output
-docker compose up -d > /dev/null 2>&1 &
+# Check if docker-compose plugin is installed
+if ! docker compose version &> /dev/null; then
+    print_info "Docker Compose not found. Installing..."
+    if [[ "$OS_TYPE" == "Linux" ]]; then
+        sudo apt-get update && sudo apt-get install -y docker-compose-plugin
+    fi
+fi
 
-# Show spinner while waiting
-pid=$!
-spin_chars='|/-\'
-i=0
-while kill -0 $pid 2>/dev/null; do
-    i=$(( (i+1) % 4 ))
-    printf "\r   [${spin_chars:$i:1}] %d seconds" $((i+1))
-    sleep 1
-done
+# Clean up any previous containers
+docker compose down -v 2>/dev/null || true
 
-# Check result
-wait $pid 2>/dev/null
-if [ $? -eq 0 ]; then
-    printf "\r   ✅ Started successfully\n"
+# Start containers with visible output (no hiding)
+if docker compose up -d; then
+    print_success "✅ Containers started successfully"
 else
-    printf "\r   ❌ Failed to start\n"
-    docker compose up -d
-    exit 1
+    print_error "❌ Failed to start containers"
+    print_info "Trying with sudo..."
+    if sudo docker compose up -d; then
+        print_success "✅ Containers started with sudo"
+    else
+        print_error "❌ Still failing. Showing error:"
+        docker compose up -d
+        exit 1
+    fi
 fi
 
 # ============================================================
