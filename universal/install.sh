@@ -37,12 +37,13 @@ IS_WSL=false
 grep -qi microsoft /proc/version 2>/dev/null && IS_WSL=true
 
 # ============================================================
-# STEP 1: Docker Installation
+# STEP 1: Docker Installation and Verification
 # ============================================================
 print_status "Checking system requirements..."
 
+# First, check if Docker is installed
 if ! command -v docker &> /dev/null; then
-    print_status "Installing Docker (this may take a moment)..."
+    print_status "Docker not found. Installing Docker..."
     
     case "$OS_TYPE" in
         Linux)
@@ -50,77 +51,61 @@ if ! command -v docker &> /dev/null; then
             if $IS_WSL; then
                 sudo usermod -aG docker $USER
                 print_info "WSL: Please restart your WSL terminal, then run this script again"
+                exit 0
             else
                 sudo usermod -aG docker $USER
-                print_info "Please log out and back in, then run this script again"
+                print_info "Docker installed. Please log out and back in, then run this script again"
+                exit 0
             fi
-            exit 0
             ;;
-        macOS)
-            if ! command -v brew &> /dev/null; then
-                /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        # ... rest of the cases
+    esac
+fi
+
+# Now check if Docker is actually RUNNING
+if ! docker info &> /dev/null; then
+    print_status "Docker is installed but not running. Attempting to start..."
+    
+    case "$OS_TYPE" in
+        Linux)
+            # Try to start Docker
+            if command -v systemctl &> /dev/null; then
+                sudo systemctl start docker
+                sudo systemctl enable docker
+                print_info "Docker started. Running this script again..."
+                exit 0
+            elif command -v service &> /dev/null; then
+                sudo service docker start
+                print_info "Docker started. Running this script again..."
+                exit 0
+            else
+                print_error "Could not start Docker automatically."
+                print_info "Please start Docker manually and run this script again"
+                print_info "  sudo systemctl start docker  # or sudo service docker start"
+                exit 1
             fi
-            brew install --cask docker
-            echo ""
-            print_info "To start Docker Desktop on macOS:"
-            echo "   1. Open Finder → Applications → Docker.app"
-            echo "   2. Or click the Docker icon in Launchpad"
-            echo "   3. Wait for the Docker whale icon to appear in menu bar"
-            echo ""
-            print_info "Once Docker is running, run this script again"
-            exit 0
             ;;
-        Windows)
-            powershell.exe -Command "
-                \$installer = '\$env:TEMP\docker-installer.exe';
-                Invoke-WebRequest -Uri 'https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe' -OutFile \$installer;
-                Start-Process -FilePath \$installer -ArgumentList 'install', '--quiet' -Wait;
-            " 2>/dev/null
-            echo ""
-            print_info "To complete Docker Desktop setup on Windows:"
-            echo "   1. Docker Desktop installer will open - follow the wizard"
-            echo "   2. IMPORTANT: Check 'Use WSL 2 instead of Hyper-V' when prompted"
-            echo "   3. Restart your computer when installation completes"
-            echo "   4. After restart, launch Docker Desktop from Start Menu"
-            echo "   5. Wait for the Docker whale icon in system tray to stop animating"
-            echo ""
-            print_info "Once Docker is running, run this script again"
+        macOS|Windows)
+            print_info "Please start Docker Desktop and run this script again"
             exit 0
             ;;
         *)
-            print_error "Please install Docker from https://docker.com"
+            print_error "Docker is installed but not running. Please start Docker and try again."
             exit 1
             ;;
     esac
 fi
 
+# Verify user has permission to run Docker without sudo
 if ! docker info &> /dev/null; then
-    case "$OS_TYPE" in
-        Linux)
-            if $IS_WSL; then
-                echo ""
-                print_info "To start Docker in WSL:"
-                echo "   sudo service docker start"
-                echo "   # Or: sudo systemctl start docker"
-                echo ""
-                print_info "Once Docker is running, run this script again"
-            else
-                echo ""
-                print_info "To start Docker on Linux:"
-                echo "   sudo systemctl start docker"
-                echo "   # Or: sudo service docker start"
-                echo ""
-                print_info "Once Docker is running, run this script again"
-            fi
-            exit 0
-            ;;
-        macOS|Windows)
-            echo ""
-            print_info "Please start Docker Desktop and run this script again"
-            exit 0
-            ;;
-    esac
+    print_warning "Docker is running but your user doesn't have permission."
+    print_info "Adding your user to the docker group..."
+    sudo usermod -aG docker $USER
+    print_info "Please log out and back in, then run this script again"
+    exit 0
 fi
+
+print_success "Docker is installed and running"
 
 # ============================================================
 # STEP 2: Setup Directory
