@@ -614,8 +614,18 @@ fi
 print_status "🔍 Indexing your course materials (this may take a few minutes)..."
 
 sleep 5
-mkdir -p ~/ai-tutor/knowledge
-chmod 755 ~/ai-tutor/knowledge
+# Create the knowledge directory with proper permissions
+if [ -d ~/ai-tutor/knowledge ]; then
+    # If it exists, check ownership
+    if [ "$(stat -c '%U' ~/ai-tutor/knowledge 2>/dev/null)" != "$(whoami)" ]; then
+        print_info "Fixing ownership of knowledge directory..."
+        sudo chown -R $(whoami):$(whoami) ~/ai-tutor/knowledge 2>/dev/null || true
+        sudo chmod 755 ~/ai-tutor/knowledge 2>/dev/null || true
+    fi
+else
+    mkdir -p ~/ai-tutor/knowledge
+    chmod 755 ~/ai-tutor/knowledge
+fi
 
 docker exec ai-tutor mkdir -p /tmp/indexing
 docker cp ~/ai-tutor/course-materials/. ai-tutor:/tmp/indexing/course-materials/
